@@ -1,0 +1,7 @@
+[console_scripts]
+WalkingTractConverter = tractconverter.WalkingTractConverter:main
+TractConverter = tractconverter.TractConverter:main
+
+[setuptools.installation]
+eggsecutable = tractconverter.WalkingTractConverter:main
+
