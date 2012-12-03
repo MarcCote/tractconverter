@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='TractConverter',
-    version='0.3.4',
+    version='0.3.5',
     author='Marc-Alexandre Côté',
     author_email='marc-alexandre.cote@usherbrooke.ca',
     packages = find_packages(),

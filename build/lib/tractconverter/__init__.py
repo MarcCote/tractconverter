@@ -1,0 +1,2 @@
+from TractConverter import convert
+from WalkingTractConverter import walkAndConvert

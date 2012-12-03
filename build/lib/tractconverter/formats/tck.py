@@ -27,7 +27,7 @@ class TCK:
     #Static Methods
     ###
     @staticmethod
-    def create(filename, hdr, anatFile):
+    def create(filename, hdr, anatFile=None):
         f = open(filename, 'wb')
         f.write(TCK.MAGIC_NUMBER + "\n")
         f.close()
@@ -148,6 +148,11 @@ class TCK:
         # scaling factor is encoded in the transformation matrix, but we do not,
         # for the moment, use this scaling. Therefore, we must remove it from the
         # the transformation matrix before computing its inverse.
+        if anatFile is None:
+            self.M = np.identity(4)
+            self.invM = np.identity(4)
+            return
+
         anat = nibabel.load(anatFile)
         voxelSize = list(anat.get_header().get_zooms())[:3]
 
