@@ -256,6 +256,5 @@ class TCK:
         pts = pts[np.isfinite(pts[:, 0])]
         idxNaN -= np.arange(len(idxNaN))
 
-        return np.split(pts, idxNaN)
-
-        #yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
+        streamlines = np.split(pts, idxNaN)
+        return map(lambda s: np.dot(c_[s, np.ones(len(s), dtype='<f4')], self.invM)[:, :-1], streamlines)
