@@ -238,40 +238,24 @@ class TCK:
 
         f.close()
 
+    def load_all(self):
+        buff = ""
+        idxNaN = []
+
+        f = open(self.filename, 'rb')
+        f.seek(self.offset)
+        remainingBytes = os.path.getsize(self.filename) - self.offset
+
+        buff += f.read(remainingBytes)
+        f.close()
+        pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
+
+        if self.dtype != '<f4':
+            pts = pts.astype('<f4')
+
+        pts = pts.reshape([-1, 3])
+        idxNaN = np.arange(len(pts))[np.isnan(pts[:, 0])]
+        return np.split(pts, idxNaN)
 
 
-    # def load_all(self):
-    #     buff = ""
-    #     idxNaN = []
-
-    #     f = open(self.filename, 'rb')
-    #     f.seek(self.offset)
-    #     remainingBytes = os.path.getsize(self.filename) - self.offset
-
-    #     buff += f.read(remainingBytes)
-    #     pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
-
-
-
-    #     while remainingBytes > 0 or len(buff) > 3*self.dtype.itemsize:
-
-
-
-    #         if self.dtype != '<f4':
-    #             pts = pts.astype('<f4')
-
-    #         pts = pts.reshape([-1, 3])
-    #         idxNaN = np.arange(len(pts))[np.isnan(pts[:, 0])]
-
-    #         if len(idxNaN) == 0:
-    #             continue
-
-    #         nbPts = len(pts[:idxNaN[0], :])
-    #         yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
-
-    #         #Remove pts plus the first triplet of NaN.
-    #         nbBytesToRemove = (nbPts + 1) * 3 * self.dtype.itemsize
-    #         buff = buff[nbBytesToRemove:]
-    #         idxNaN = idxNaN[1:]
-
-    #     f.close()
+        #yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
