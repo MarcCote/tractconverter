@@ -213,7 +213,7 @@ class TCK:
 
         while remainingBytes > 0 or len(buff) > 3 * self.dtype.itemsize:
             if remainingBytes > 0:
-                nbBytesToRead = min(remainingBytes, 10000 * 3 * self.dtype.itemsize)
+                nbBytesToRead = min(remainingBytes, 10000A * 3 * self.dtype.itemsize)
                 buff += f.read(nbBytesToRead)  # Read 100 triplets of coordinates (float)
                 remainingBytes -= nbBytesToRead
 
@@ -244,7 +244,7 @@ class TCK:
             f.seek(self.offset)
             buff = f.read()
 
-        buff = buff[:-6 * 3 * self.dtype.itemsize]
+        buff = buff[:-2 * 3 * self.dtype.itemsize]
         pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
 
         #Convert big endian to little endian
