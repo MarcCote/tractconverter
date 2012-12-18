@@ -239,23 +239,23 @@ class TCK:
         f.close()
 
     def load_all(self):
-        buff = ""
-        idxNaN = []
 
-        f = open(self.filename, 'rb')
-        f.seek(self.offset)
-        remainingBytes = os.path.getsize(self.filename) - self.offset
+        with open(self.filename, 'rb') as f:
+            f.seek(self.offset)
+            buff = f.read()
 
-        buff += f.read(remainingBytes)
-        f.close()
+        buff = buff[:-6 * 3 * self.dtype.itemsize]
         pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
 
+        #Convert big endian to little endian
         if self.dtype != '<f4':
             pts = pts.astype('<f4')
 
         pts = pts.reshape([-1, 3])
         idxNaN = np.arange(len(pts))[np.isnan(pts[:, 0])]
-        return np.split(pts, idxNaN)
+        pts = pts[np.isfinite(pts[:, 0])]
+        idxNaN -= np.arange(len(idxNaN))
 
+        return np.split(pts, idxNaN)
 
         #yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
