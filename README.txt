@@ -1,43 +1,40 @@
-===============
-Track Converter
-===============
+================
+ TractConverter
+================
 
-Track Converter provides such and such and so and so. You might find
-it most useful for tasks involving <x> and also <y>. Typical usage
-often looks like this::
+TractConverter is a python toolbox to convert tractogram files.
 
-    #!/usr/bin/env python
+TractConverter is for research only; please do not use results
+from TractConverter on clinical data.
 
-    from towelstuff import location
-    from towelstuff import utils
+Website
+=======
 
-    if utils.has_towel():
-        print "Your towel is located:", location.where_is_my_towel()
+N/A
 
-(Note the double-colon and 4-space indent formatting above.)
+Mailing Lists
+=============
 
-Paragraphs are separated by blank lines. *Italics*, **bold**,
-and ``monospace`` look like this.
+N/A
 
+Code
+====
 
-A Section
-=========
+You can find our sources and single-click downloads:
 
-Lists look like this:
+* `Main repository`_ on Github.
+* Documentation_ for all releases and current development tree.
+* Download as a tar/zip file the `current trunk`_.
+* Downloads of all `available releases`_.
 
-* First
+.. _main repository: http://github.com/MarcCote/tractconverter
+.. _Documentation: N/A
+.. _current trunk: http://github.com/MarcCote/tractconverter/master
+.. _available releases: N/A
 
-* Second. Can be multiple lines
-  but must be indented properly.
+License
+=======
 
-A Sub-Section
--------------
-
-Numbered lists look like you'd expect:
-
-1. hi there
-
-2. must be going
-
-Urls are http://like.this and links can be
-written `like this <http://www.example.com/foo/bar>`_.
+tractconverter is licensed under the terms of the BSD license. Some code included with
+tractconverter is also licensed under the BSD license.  Please the LICENSE file in the
+tractconverter distribution.

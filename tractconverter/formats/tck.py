@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
-#Documentation available here:
-#http://www.brain.org.au/software/mrtrix/appendix/mrtrix.html
+# Documentation available here:
+# http://www.brain.org.au/software/mrtrix/appendix/mrtrix.html
 
 import os
 import numpy as np
@@ -14,18 +14,23 @@ from numpy.lib.index_tricks import c_, r_
 
 class TCK:
     MAGIC_NUMBER = "mrtrix tracks"
-    #self.hdr
-    #self.filename
-    #self.dtype
-    #self.offset
-    #self.FIBER_DELIMITER
-    #self.END_DELIMITER
-    #self.anat
-    #self.M
-    #self.invM
+    BUFFER_SIZE = 10000
+
+    FIBER_DELIMITER = np.array([[np.nan, np.nan, np.nan]], '<f4')
+    END_DELIMITER = np.array([[np.inf, np.inf, np.inf]], '<f4')
+
+    # self.hdr
+    # self.filename
+    # self.dtype
+    # self.offset
+    # self.FIBER_DELIMITER
+    # self.END_DELIMITER
+    # self.anat
+    # self.M
+    # self.invM
 
     #####
-    #Static Methods
+    # Static Methods
     ###
     @staticmethod
     def create(filename, hdr, anatFile=None):
@@ -41,7 +46,7 @@ class TCK:
         return tck
 
     #####
-    #Methods
+    # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
         self.filename = filename
@@ -59,55 +64,56 @@ class TCK:
         magicNumber = f.readline()
 
         f.close()
-        return magicNumber.strip() == self.MAGIC_NUMBER
+        return magicNumber.strip() == TCK.MAGIC_NUMBER
 
     def _load(self):
         f = open(self.filename, 'rb')
 
-        #Skip magic number
+        # Skip magic number
         buffer = f.readline()
 
         #####
-        #Read header
+        # Read header
         ###
         buffer = f.readline()
         while not buffer.rstrip().endswith("END"):
             buffer += f.readline()
 
-        #Build dictionary from header (not used)
+        # Build dictionary from header (not used)
         hdr = dict(item.split(': ') for item in buffer.rstrip().split('\n')[:-1])
 
-        #Set datatype
+        # Set datatype
         self.dtype = np.dtype('>f4')
         if hdr['datatype'].endswith('LE'):
             self.dtype = np.dtype('<f4')
 
-        #Seek to beginning of data
+        # Seek to beginning of data
         self.offset = int(hdr['file'].split()[1])
 
         f.seek(self.offset)
-        #Count number of NaN (i.e. numbers of fiber).
+        # Count number of NaN (i.e. numbers of fiber).
         self.hdr[Header.NB_FIBERS] = 0
+        self.hdr[Header.NB_POINTS] = 0
         remainingBytes = os.path.getsize(self.filename) - self.offset
         while remainingBytes > 0:
-            nbBytesToRead = min(remainingBytes, 1000 * 3 * self.dtype.itemsize)
-            buff = f.read(nbBytesToRead)  # Read 100 triplets of coordinates (float)
+            nbBytesToRead = min(remainingBytes, TCK.BUFFER_SIZE * 3 * self.dtype.itemsize)
+            buff = f.read(nbBytesToRead)  # Read TCK.BUFFER_SIZE triplets of coordinates (float)
             pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
             remainingBytes -= nbBytesToRead
 
             pts = pts.reshape([-1, 3])
-            self.hdr[Header.NB_FIBERS] += len(pts[np.isnan(pts[:, 0])])
+            nbNaNs = sum(np.isnan(pts[:, 0]))
+            self.hdr[Header.NB_FIBERS] += nbNaNs
+            self.hdr[Header.NB_POINTS] += len(pts) - nbNaNs
 
+        self.hdr[Header.NB_POINTS] -= 1  # Because the file ends with a serie of 'inf'
         f.close()
-
-    FIBER_DELIMITER = np.array([[np.nan, np.nan, np.nan]], '<f4')
-    END_DELIMITER = np.array([[np.inf, np.inf, np.inf]], '<f4')
 
     def writeHeader(self):
         f = open(self.filename, 'wb')
 
         lines = []
-        lines.append(self.MAGIC_NUMBER)
+        lines.append(TCK.MAGIC_NUMBER)
         lines.append("count: {0}".format(self.hdr[Header.NB_FIBERS]))
         lines.append("datatype: Float32LE")
         lines.append("file: . ")
@@ -127,14 +133,6 @@ class TCK:
         f = open(self.filename, 'ab')
         f.write(self.END_DELIMITER.tostring())
         f.close()
-
-#    def __iadd__(self, fiber):
-#        f = open(self.filename, 'ab')
-#        f.write(fiber.tostring())
-#        f.write(self.FIBER_DELIMITER.tostring())
-#        f.close()
-#
-#        return self
 
     def _calcTransform(self, anatFile):
         # The MrTrix fibers are defined in the same geometric reference
@@ -176,7 +174,7 @@ class TCK:
 
         return self
 
-    #TODO:
+    # TODO:
     #    voxelSize = [0,0,0]
     #    if anatFile is not None:
     #        # The MrTrix fibers are defined in the same geometric reference
@@ -201,7 +199,7 @@ class TCK:
     #        pts = np.dot(c_[pts, np.ones([len(pts), 1])], M.T)[:,:-1]
 
     #####
-    #Iterate through fibers
+    # Iterate through fibers
     ###
     def __iter__(self):
         buff = ""
@@ -213,8 +211,8 @@ class TCK:
 
         while remainingBytes > 0 or len(buff) > 3 * self.dtype.itemsize:
             if remainingBytes > 0:
-                nbBytesToRead = min(remainingBytes, 10000 * 3 * self.dtype.itemsize)
-                buff += f.read(nbBytesToRead)  # Read 100 triplets of coordinates (float)
+                nbBytesToRead = min(remainingBytes, TCK.BUFFER_SIZE * 3 * self.dtype.itemsize)
+                buff += f.read(nbBytesToRead)  # Read BUFFER_SIZE triplets of coordinates (float)
                 remainingBytes -= nbBytesToRead
 
             pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
@@ -231,7 +229,7 @@ class TCK:
             nbPts = len(pts[:idxNaN[0], :])
             yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
 
-            #Remove pts plus the first triplet of NaN.
+            # Remove pts plus the first triplet of NaN.
             nbBytesToRemove = (nbPts + 1) * 3 * self.dtype.itemsize
             buff = buff[nbBytesToRemove:]
             idxNaN = idxNaN[1:]
@@ -247,7 +245,7 @@ class TCK:
         buff = buff[:-2 * 3 * self.dtype.itemsize]
         pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
 
-        #Convert big endian to little endian
+        # Convert big endian to little endian
         if self.dtype != '<f4':
             pts = pts.astype('<f4')
 

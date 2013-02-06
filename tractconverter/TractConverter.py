@@ -9,16 +9,18 @@ import os
 from tractconverter.formats.tck import TCK
 from tractconverter.formats.trk import TRK
 from tractconverter.formats.fib import FIB
+from tractconverter.formats.vtk import VTK
 from tractconverter.formats.header import Header
 
-#Input and output extensions.
+# Input and output extensions.
 EXT_ANAT = ".nii|.nii.gz"
 
 FORMATS = {"tck": TCK,
            "trk": TRK,
-           "fib": FIB}
+           "fib": FIB,
+           "vtk": VTK}
 
-#Script description
+# Script description
 DESCRIPTION = 'Convert track files for {0}'.format(",".join(FORMATS.keys()))
 
 

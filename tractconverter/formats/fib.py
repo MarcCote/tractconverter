@@ -6,11 +6,11 @@ from tractconverter.formats.header import Header
 
 class FIB:
     MAGIC_NUMBER = "fib"  # Not really one...
-    #self.hdr
-    #self.filename
+    # self.hdr
+    # self.filename
 
     #####
-    #Static Methods
+    # Static Methods
     ###
     @staticmethod
     def create(filename, hdr, anatFile=None):
@@ -25,7 +25,7 @@ class FIB:
         return fib
 
     #####
-    #Methods
+    # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
         self.filename = filename
@@ -43,20 +43,21 @@ class FIB:
         f = open(self.filename, 'rb')
 
         #####
-        #Read header
+        # Read header
         ###
-        #Skip "magic number"
+        # Skip "magic number"
         f.readline()
 
-        #Skip the 5 next lines
+        # Skip the 5 next lines
         f.readline()  # 4 min max mean var
         f.readline()  # 1
         f.readline()  # 4 0 0 0 0
         f.readline()  # 4 0 0 0 0
         f.readline()  # 4 0 0 0 0
 
-        #Read number of fibers
+        # Read number of fibers
         self.hdr[Header.NB_FIBERS] = int(f.readline().split()[0])
+        self.hdr[Header.NB_POINTS] = len(f.readlines()) - 2 * self.hdr[Header.NB_FIBERS]
 
         f.close()
 
@@ -77,7 +78,7 @@ class FIB:
         pass
 
     #####
-    #Append fiber to file
+    # Append fiber to file
     ###
     def __iadd__(self, fibers):
         f = open(self.filename, 'ab')
@@ -94,13 +95,13 @@ class FIB:
         return self
 
     #####
-    #Iterate through fibers from file
+    # Iterate through fibers from file
     ###
     def __iter__(self):
 
         f = open(self.filename, 'rb')
 
-        #Skip header
+        # Skip header
         for i in range(7):
             f.readline()
 
@@ -108,7 +109,7 @@ class FIB:
             line = f.readline()
             nbBackward, nbForward = map(int, line.split())
             f.readline()  # Skip (unused)
-            #nbPoints = nbBackward + nbForward - int(nbBackward > 0 and nbForward > 0)
+            # nbPoints = nbBackward + nbForward - int(nbBackward > 0 and nbForward > 0)
             pts = []
             for j in range(nbBackward):
                 pts.append(f.readline().split()[:3])
