@@ -24,13 +24,7 @@ FORMATS = {"tck": TCK,
 DESCRIPTION = 'Convert track files for {0}'.format(",".join(FORMATS.keys()))
 
 
-def convert(inFile, outFile, anatFile):
-
-    inFormat = FORMATS[inFile[-3:]]
-    outFormat = FORMATS[outFile[-3:]]
-
-    input = inFormat(inFile, anatFile)
-    output = outFormat.create(outFile, input.hdr, anatFile)
+def convert(input, output):
 
     nbFibers = 0
     fibers = []
@@ -47,11 +41,10 @@ def convert(inFile, outFile, anatFile):
 
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
+
 #####
 # Script part
 ###
-
-
 def buildArgsParser():
     p = argparse.ArgumentParser(description=DESCRIPTION)
     p.add_argument('-i', action='store', dest='input',
@@ -73,54 +66,56 @@ def buildArgsParser():
 def main():
     parser = buildArgsParser()
     args = parser.parse_args()
-#    args = parser.parse_args(['-i', r'P:\temp jc\for_marc\voi_seeding_1_1mm_Left_Brodmann_area_19_Roland_2_Left_Brodmann_area_37_Roland_det_curv0.tck',
-#                              '-o', r'P:\temp jc\for_marc\voi_seeding_1_1mm_Left_Brodmann_area_19_Roland_2_Left_Brodmann_area_37_Roland_det_curv0.fib',
-#                              '-a', r'P:\temp jc\for_marc\t1.nii',
-#                              '-f', '-v'])
 
-#    args = parser.parse_args(['-i', r'C:\tata.tck',
-#                              '-o', r'C:\tata_tck.fib',
-#                              '-a', r'C:\t2.nii.gz',
-#                              '-f', '-v'])
-
-    input = args.input
-    output = args.output
-    anat = args.anat
+    in_filename = args.input
+    out_filename = args.output
+    anat_filename = args.anat
     isForcing = args.isForce
     isVerbose = args.isVerbose
 
     if isVerbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    if input[-3:] not in FORMATS.keys():
+    if not os.path.isfile(in_filename):
+        parser.error('"{0}" must be an existing file!'.format(in_filename))
+
+    #Check if 'in_filename' is in a known format.
+    inFormat = None
+    for format in FORMATS.values():
+        if format(in_filename)._check():
+            inFormat = format
+
+    if inFormat is None:
         parser.error('Input file must be one of {0}!'.format(",".join(FORMATS.keys())))
 
-    if not os.path.isfile(input):
-        parser.error('"{0}" must be an existing file!'.format(input))
-
-    if output[-3:] not in FORMATS.keys():
+    if out_filename[-3:] not in FORMATS.keys():
         parser.error('Output file must be one of {0}!'.format(",".join(FORMATS.keys())))
 
-    if os.path.isfile(output):
-        if isForcing:
-            logging.info('Overwriting "{0}".'.format(output))
-        else:
-            parser.error('"{0}" already exist! Use -f to overwrite it.'.format(output))
+    outFormat = FORMATS[out_filename[-3:]]
 
-    if input[-3:] == output[-3:]:
+    if os.path.isfile(out_filename):
+        if isForcing:
+            logging.info('Overwriting "{0}".'.format(out_filename))
+        else:
+            parser.error('"{0}" already exist! Use -f to overwrite it.'.format(out_filename))
+
+    if type(inFormat) == type(outFormat):
         parser.error('Input and output must be from different types!'.format(",".join(FORMATS.keys())))
 
-    if anat is not None:
-        if not any(map(anat.endswith, EXT_ANAT.split('|'))):
+    if anat_filename is not None:
+        if not any(map(anat_filename.endswith, EXT_ANAT.split('|'))):
             if isForcing:
-                logging.info('Reading "{0}" as a {1} file.'.format(anat.split("/")[-1], EXT_ANAT))
+                logging.info('Reading "{0}" as a {1} file.'.format(anat_filename.split("/")[-1], EXT_ANAT))
             else:
                 parser.error('Anatomy file must be one of {1}!'.format(EXT_ANAT))
 
-        if not os.path.isfile(anat):
-            parser.error('"{0}" must be an existing file!'.format(anat))
+        if not os.path.isfile(anat_filename):
+            parser.error('"{0}" must be an existing file!'.format(anat_filename))
 
-    convert(input, output, anat)
+    #Convert input to output
+    input = inFormat(in_filename, anat_filename)
+    output = outFormat.create(out_filename, input.hdr, anat_filename)
+    convert(input, output)
 
 if __name__ == "__main__":
     main()

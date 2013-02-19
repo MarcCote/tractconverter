@@ -10,6 +10,8 @@ from tractconverter import TractConverter
 import argparse
 import logging
 
+from TractConverter import FORMATS
+
 
 def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isRecursive=False, p_overwrite=False):
 
@@ -18,22 +20,24 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
         root = root + "/"
         nbFiles = 0
         for k, v in p_conversions.items():
-            files = [f for f in allFiles if f[-3:] == k]
+            files = [f for f in allFiles if FORMATS[k](root + f, p_anatFile)._check()]
             for f in files:
                 nbFiles += 1
                 inFile = root + f
                 logging.info('{0}/{1} files'.format(nbFiles, len(allFiles)))
 
                 if p_output is not None:
-                    outfile = p_output + '/' + f[:-3] + v
+                    outFile = p_output + '/' + f[:-3] + v
                 else:
-                    outfile = inFile[:-3] + v
+                    outFile = inFile[:-3] + v
 
-                if path.exists(outfile) and not p_overwrite:
+                if path.exists(outFile) and not p_overwrite:
                     logging.info(f + " : Already Done!!!")
                     continue
 
-                TractConverter.convert(inFile, outfile, p_anatFile)
+                input = FORMATS[k](inFile, p_anatFile)
+                output = FORMATS[k](outFile, input.hdr, p_anatFile)
+                TractConverter.convert(input, output)
                 logging.info(inFile)
 
         logging.info('{0} skipped (none track files)'.format(len(allFiles) - nbFiles))
@@ -104,14 +108,6 @@ def buildArgsParser():
 def main():
     parser = buildArgsParser()
     args = parser.parse_args()
-
-#    args = parser.parse_args(['-i', r'C:\Arnaud_trackConverters_data\trk\\',
-#                              '-o', r'C:\Arnaud_trackConverters_data\out\\',
-#                              '-a', r'C:\t2.nii.gz',
-#                              '-trk2tck',
-#                              '-v', '-h',
-#                              #'-f', '-v',
-#                              ])
 
     input = args.input
     output = args.output
