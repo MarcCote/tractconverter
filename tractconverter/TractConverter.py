@@ -45,6 +45,8 @@ def convert(inFile, outFile, anatFile):
     output += fibers
     output.close()
 
+    input.close()
+
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
 #####
