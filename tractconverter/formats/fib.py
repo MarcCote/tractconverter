@@ -115,10 +115,11 @@ class FIB:
                 pts.append(f.readline().split()[:3])
 
             pts = pts[::-1]
-            if nbForward > 0:
+            if nbForward > 0 and nbBackward > 0:
                 f.readline()  # Skip redundant points
+                nbForward -= 1
 
-            for j in range(nbForward - 1):
+            for j in range(nbForward):
                 pts.append(f.readline().split()[:3])
 
             pts = np.array(pts, "<f4")
