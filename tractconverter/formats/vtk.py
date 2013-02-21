@@ -4,16 +4,18 @@
 # http://www.vtk.org/VTK/img/file-formats.pdf
 
 import os
-import tempfile
 import numpy as np
+from pdb import set_trace as dbg
 
 from tractconverter.formats.header import Header
+
 
 def readBinaryBytes(f, nbBytes, dtype):
     buff = f.read(nbBytes * dtype.itemsize)
     return np.frombuffer(buff, dtype=dtype)
 
-def readAsciiBytes(f, nbWords, dtype):
+
+def readAcsiiBytes(f, nbWords, dtype):
     words = []
     buff = ""
     while len(words) < nbWords:
@@ -27,81 +29,10 @@ def readAsciiBytes(f, nbWords, dtype):
 
     return np.array(' '.join(words).split(), dtype=dtype)
 
-# We assume the file cursor points to the beginning of the file.
-def checkIfBinary(f):
-    f.readline()  # Skip version
-    f.readline()  # Skip description
-    file_type = f.readline()  # Type of the file BINARY or ASCII.
-    
-    f.seek(0, 0)  # Reset cursor to beginning of the file.
-    
-    return file_type == "BINARY\n"
-
-def convertAsciiToBinary(original_filename):
-    f = open(original_filename, 'rb')
-
-    # Skip the first header lines
-    f.readline()  # Version (not used)
-    f.readline()  # Description (not used)
-    original_file_type = f.readline()  # Type of the file BINARY or ASCII.
-    f.readline()  # Data type (not used)
-    
-    if original_file_type != "ASCII\n":
-        raise ValueError("BINARY file given to convertAsciiToBinary.")
-
-    # Create a temporary file with a name. Delete is set to false to make sure 
-    # the file is not automatically deleted when closed.
-    binary_file = tempfile.NamedTemporaryFile(delete = False)
-
-    # Write header
-    binary_file.write("# {0} DataFile Version {1}\n".format(VTK.MAGIC_NUMBER, VTK.VERSION))
-    binary_file.write("converted from ASCII vtk by tractconverter\n")
-    binary_file.write("BINARY\n")
-    binary_file.write("DATASET POLYDATA\n")
-
-    temp_line = f.readline() # POINTS n float
-    binary_file.write(temp_line)
-    
-    # Initialize for the loop.
-    temp_line = f.readline()
-    tokens = temp_line.split()
-    
-    # Write all the points up to the moment we find the LINES marker.
-    while tokens[0] != "LINES":
-        tokens_num = np.array(' '.join(tokens).split(), dtype='>f4')
-        binary_file.write(tokens_num.astype('>f4').tostring())
-        temp_line = f.readline()
-        tokens = temp_line.split()
-    
-    # Write the line containing the LINES marker.
-    binary_file.write('\n')
-    binary_file.write(temp_line)
-    
-    # Write all the lines
-    nb_lines = int(tokens[1])
-    
-    for line_idx in range(nb_lines):
-        nb_pts = readAsciiBytes(f, 1, np.dtype('>i4'))[0]
-        pts_idx = readAsciiBytes(f, nb_pts, np.dtype('>i4'))
-        binary_file.write(np.array([nb_pts], dtype='>i4').tostring())
-        binary_file.write(pts_idx.astype('>i4').tostring())
-    
-    # TODO: COLORS, SCALARS
-
-    binary_file.close()    
-    f.close()
-    
-    return binary_file.name
 
 class VTK:
     MAGIC_NUMBER = "vtk"
     VERSION = "3.0"
-    # self.hdr
-    # self.filename
-    # self.endian
-    # self.offset
-    # self.FIBER_DELIMITER
-    # self.END_DELIMITER
 
     #####
     # Static Methods
@@ -123,17 +54,12 @@ class VTK:
     ###
     def __init__(self, filename, anatFile=None, load=True):
         self.filename = filename
-        self.original_filename = filename
-
         if not self._check():
-            raise NameError("Not a VTK file.")
+            raise NameError("Not a TRK file.")
 
         self.hdr = {}
         if load:
             self._load()
-    
-    def __del__(self):
-        self.cleanTempFile()
 
     def _check(self):
         f = open(self.filename, 'rb')
@@ -143,24 +69,7 @@ class VTK:
 
     def _load(self):
         f = open(self.filename, 'rb')
-        
-        #####
-        # Check if file is in binary format or not.
-        #####
-        is_binary = checkIfBinary(f)
-        
-        #####
-        # If in ASCII format, create a temporary Binary file. This 
-        # will avoid lots of problems when reading.
-        # We will always read a binary file, converted or not.
-        #####
-        if not is_binary:
-            f.close()
-            binary_filename = convertAsciiToBinary(self.filename)
-            self.filename = binary_filename
 
-        f = open(self.filename, 'rb')
-        
         #####
         # Read header
         ###
@@ -173,9 +82,9 @@ class VTK:
 
         self.hdr[Header.NB_POINTS] = int(f.readline().split()[1])  # POINTS n float
         self.offset_points = f.tell()
-        
         f.seek(self.hdr[Header.NB_POINTS] * 3 * 4, 1)  # Skip nb_points * 3 (x,y,z) * 4 bytes
-        # Skip newline, to bring to the line containing the LINES marker.
+
+        # Skip newline
         f.readline()
 
         infos = f.readline().split()  # LINES n size
@@ -187,6 +96,10 @@ class VTK:
 
         self.offset_lines = f.tell()
         f.seek(size * 4, 1)  # Skip nb_lines + nb_points * 4 bytes
+
+        if self.fileType == "ASCII\n":
+            # Skip newline
+            f.readline()
 
         # TODO: Read infos about COLORS, SCALARS, ...
 
@@ -217,39 +130,28 @@ class VTK:
 
         f.close()
 
-    def cleanTempFile(self):
-        # If the filenames differ, we converted an ASCII file to a binary file.
-        # In this case, if the temporary binary file still exists, we need to clean up behind ourselves.
-        if self.filename != self.original_filename and os.path.exists(self.filename):
-            os.remove(self.filename)
-            self.filename = self.original_filename
-
     def close(self):
-        self.cleanTempFile()
         pass
 
     def __iadd__(self, fibers):
         f = open(self.filename, 'r+b')
         f.seek(self.offset_points, 0)
 
-        nb_points = 0
+        nb_points = (self.offset_points - self.offset) / 3 / 4
         for fib in fibers:
             f.write(fib.astype('>f4').tostring())
-            nb_points += len(fib)
 
         self.offset_points = f.tell()
 
         f.seek(self.offset_lines, 0)
         for fib in fibers:
             f.write(np.array([len(fib)], dtype='>i4').tostring())
-            f.write(np.arange(len(fib), dtype='>i4').tostring())
+            f.write(np.arange(nb_points, nb_points + len(fib), dtype='>i4').tostring())
+            nb_points += len(fib)
 
         self.offset_lines = f.tell()
 
         f.close()
-
-        # self.offset_points += nb_points * 3 * 4  # nbPoints * 3(x,y,z) * 4 bytes
-        # self.offset_lines += (nb_points + 1) * 4  # (nbPoints + nbIdx)) * 4 bytes
 
         return self
 
@@ -260,12 +162,16 @@ class VTK:
     def __iter__(self):
         f = open(self.filename, 'rb')
 
+        readFct = readAcsiiBytes
+        if self.fileType == "BINARY\n":
+            readFct = readBinaryBytes
+
         for i in range(self.hdr[Header.NB_FIBERS]):
             f.seek(self.offset_lines, 0)  # Seek from beginning of the file
 
             # Read indices of next streamline
-            nbIdx = readBinaryBytes(f, 1, np.dtype('>i4'))[0]
-            ptsIdx = readBinaryBytes(f, nbIdx, np.dtype('>i4'))
+            nbIdx = readFct(f, 1, np.dtype('>i4'))[0]
+            ptsIdx = readFct(f, nbIdx, np.dtype('>i4'))
             self.offset_lines = f.tell()
 
             # Read points according to indices previously read
@@ -273,7 +179,7 @@ class VTK:
             endPos = (np.max(ptsIdx) + 1) * 3  # After maximum index * 3 (x,y,z)
             f.seek(self.offset_points + startPos * 4, 0)  # Seek from beginning of the file
 
-            points = readBinaryBytes(f, endPos - startPos, np.dtype('>f4'))
+            points = readFct(f, endPos - startPos, np.dtype('>f4'))
             points = points.reshape([-1, 3])  # Matrix dimension: Nx3
 
             # TODO: Read COLORS, SCALARS, ...
