@@ -5,26 +5,29 @@
 
 import os
 import numpy as np
+from pdb import set_trace as dbg
 
 from numpy import linalg
 import nibabel
 from tractconverter.formats.header import Header
 from numpy.lib.index_tricks import c_, r_
 
+WRITING = "WRITING"
+READING = "READING"
 
 class TCK:
     MAGIC_NUMBER = "mrtrix tracks"
     BUFFER_SIZE = 10000
 
     FIBER_DELIMITER = np.array([[np.nan, np.nan, np.nan]], '<f4')
-    END_DELIMITER = np.array([[np.inf, np.inf, np.inf]], '<f4')
+    EOF_DELIMITER = np.array([[np.inf, np.inf, np.inf]], '<f4')
 
     # self.hdr
     # self.filename
     # self.dtype
     # self.offset
     # self.FIBER_DELIMITER
-    # self.END_DELIMITER
+    # self.EOF_DELIMITER
     # self.anat
     # self.M
     # self.invM
@@ -57,6 +60,8 @@ class TCK:
         if load:
             self._calcTransform(anatFile)
             self._load()
+
+        self.mode = READING
 
     def _check(self):
         f = open(self.filename, 'rb')
@@ -129,10 +134,14 @@ class TCK:
         f.write("END\n")
         f.close()
 
+        self.mode = WRITING
+
     def close(self):
-        f = open(self.filename, 'ab')
-        f.write(self.END_DELIMITER.tostring())
-        f.close()
+        #If previously opened in writing mode, append end of file delimiter.
+        if self.mode == WRITING:
+            f = open(self.filename, 'ab')
+            f.write(self.EOF_DELIMITER.tostring())
+            f.close()
 
     def _calcTransform(self, anatFile):
         # The MrTrix fibers are defined in the same geometric reference
