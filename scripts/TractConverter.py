@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Created on 2012-02-10
 
@@ -6,40 +7,13 @@ Created on 2012-02-10
 import argparse
 import logging
 import os
-from tractconverter.formats.tck import TCK
-from tractconverter.formats.trk import TRK
-from tractconverter.formats.fib import FIB
-from tractconverter.formats.vtk import VTK
-from tractconverter.formats.header import Header
 
-# Input and output extensions.
-EXT_ANAT = ".nii|.nii.gz"
-
-FORMATS = {"tck": TCK,
-           "trk": TRK,
-           "fib": FIB,
-           "vtk": VTK}
+import tractconverter
+from tractconverter import FORMATS
+from tractconverter import EXT_ANAT
 
 # Script description
 DESCRIPTION = 'Convert track files for {0}'.format(",".join(FORMATS.keys()))
-
-
-def convert(input, output):
-
-    nbFibers = 0
-    fibers = []
-    for i, f in enumerate(input):
-        fibers.append(f)
-        if (i + 1) % 100 == 0:
-            output += fibers
-            fibers = []
-
-        nbFibers += 1
-
-    output += fibers
-    output.close()
-
-    logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
 
 #####
@@ -115,7 +89,7 @@ def main():
     #Convert input to output
     input = inFormat(in_filename, anat_filename)
     output = outFormat.create(out_filename, input.hdr, anat_filename)
-    convert(input, output)
+    tractconverter.convert(input, output)
 
 if __name__ == "__main__":
     main()

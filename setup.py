@@ -164,8 +164,8 @@ def main(**extra_args):
           cmdclass = cmdclass,
           entry_points = {
                         'console_scripts': [
-                            'TractConverter = tractconverter.TractConverter:main',
-                            'WalkingTractConverter = tractconverter.WalkingTractConverter:main',
+                            'TractConverter = scripts.TractConverter:main',
+                            'WalkingTractConverter = scripts.WalkingTractConverter:main',
                             ]
                         },
           **extra_args
