@@ -53,25 +53,20 @@ def main():
     if not os.path.isfile(in_filename):
         parser.error('"{0}" must be an existing file!'.format(in_filename))
 
-    #Check if 'in_filename' is in a known format.
-    inFormat = None
-    for format in FORMATS.values():
-        if format(in_filename)._check():
-            inFormat = format
-
-    if inFormat is None:
+    if tractconverter.is_supported(in_filename):
         parser.error('Input file must be one of {0}!'.format(",".join(FORMATS.keys())))
 
-    if out_filename[-3:] not in FORMATS.keys():
+    if tractconverter.is_supported(out_filename):
         parser.error('Output file must be one of {0}!'.format(",".join(FORMATS.keys())))
-
-    outFormat = FORMATS[out_filename[-3:]]
 
     if os.path.isfile(out_filename):
         if isForcing:
             logging.info('Overwriting "{0}".'.format(out_filename))
         else:
             parser.error('"{0}" already exist! Use -f to overwrite it.'.format(out_filename))
+
+    inFormat = tractconverter.detect_format(in_filename)
+    outFormat = tractconverter.detect_format(out_filename)
 
     if type(inFormat) == type(outFormat):
         parser.error('Input and output must be from different types!'.format(",".join(FORMATS.keys())))

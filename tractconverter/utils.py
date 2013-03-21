@@ -1,4 +1,4 @@
-
+import os
 import logging
 
 from tractconverter.formats.tck import TCK
@@ -23,6 +23,9 @@ def is_supported(filename):
 
 
 def detect_format(filename):
+    if not os.path.isfile(filename):
+        return filename[-3:] in FORMATS.keys()
+
     for format in FORMATS.values():
         if format(filename)._check():
             return format
