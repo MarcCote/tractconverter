@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Created on 2012-02-10
 
@@ -6,9 +7,12 @@ Created on 2012-02-10
 import os
 import os.path as path
 
-from tractconverter import TractConverter
+import tractconverter
 import argparse
 import logging
+
+from tractconverter import FORMATS
+from tractconverter import EXT_ANAT
 
 
 def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isRecursive=False, p_overwrite=False):
@@ -18,22 +22,24 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
         root = root + "/"
         nbFiles = 0
         for k, v in p_conversions.items():
-            files = [f for f in allFiles if f[-3:] == k]
+            files = [f for f in allFiles if FORMATS[k](root + f, p_anatFile)._check()]
             for f in files:
                 nbFiles += 1
                 inFile = root + f
                 logging.info('{0}/{1} files'.format(nbFiles, len(allFiles)))
 
                 if p_output is not None:
-                    outfile = p_output + '/' + f[:-3] + v
+                    outFile = p_output + '/' + f[:-3] + v
                 else:
-                    outfile = inFile[:-3] + v
+                    outFile = inFile[:-3] + v
 
-                if path.exists(outfile) and not p_overwrite:
+                if path.exists(outFile) and not p_overwrite:
                     logging.info(f + " : Already Done!!!")
                     continue
 
-                TractConverter.convert(inFile, outfile, p_anatFile)
+                input = FORMATS[k](inFile, p_anatFile)
+                output = FORMATS[k](outFile, input.hdr, p_anatFile)
+                tractconverter.convert(input, output)
                 logging.info(inFile)
 
         logging.info('{0} skipped (none track files)'.format(len(allFiles) - nbFiles))
@@ -47,7 +53,7 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
 ###
 
 #Script description
-DESCRIPTION = 'Convert track files while walking down a path. ({0})'.format(",".join(TractConverter.FORMATS.keys()))
+DESCRIPTION = 'Convert track files while walking down a path. ({0})'.format(",".join(FORMATS.keys()))
 
 
 def buildArgsParser():
@@ -60,7 +66,7 @@ def buildArgsParser():
                    help='output folder (if omitted, the walking folder is used)')
     p.add_argument('-a', action='store', dest='anat',
                    metavar='FILE', required=False,
-                   help='anatomy file ({0})'.format(TractConverter.EXT_ANAT))
+                   help='anatomy file ({0})'.format(EXT_ANAT))
 
     #VTK
     p.add_argument('-vtk2tck', action='store_true', dest='vtk2tck',
@@ -104,14 +110,6 @@ def buildArgsParser():
 def main():
     parser = buildArgsParser()
     args = parser.parse_args()
-
-#    args = parser.parse_args(['-i', r'C:\Arnaud_trackConverters_data\trk\\',
-#                              '-o', r'C:\Arnaud_trackConverters_data\out\\',
-#                              '-a', r'C:\t2.nii.gz',
-#                              '-trk2tck',
-#                              '-v', '-h',
-#                              #'-f', '-v',
-#                              ])
 
     input = args.input
     output = args.output
@@ -178,11 +176,11 @@ def main():
         parser.error('Nothing to convert! Please specify at least one conversion.')
 
     if anat is not None:
-        if not any(map(anat.endswith, TractConverter.EXT_ANAT.split('|'))):
+        if not any(map(anat.endswith, EXT_ANAT.split('|'))):
             if isForcing:
-                logging.info('Reading "{0}" as a {1} file.'.format(anat.split("/")[-1], TractConverter.EXT_ANAT))
+                logging.info('Reading "{0}" as a {1} file.'.format(anat.split("/")[-1], EXT_ANAT))
             else:
-                parser.error('Anatomy file must be one of {0}!'.format(TractConverter.EXT_ANAT))
+                parser.error('Anatomy file must be one of {0}!'.format(EXT_ANAT))
 
         if not os.path.isfile(anat):
             parser.error('"{0}" must be an existing file!'.format(anat))
