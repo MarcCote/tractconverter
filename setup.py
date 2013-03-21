@@ -1,41 +1,8 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-# import distribute_setup
-# distribute_setup.use_setuptools()
-
-# from setuptools import setup, find_packages
-
-# setup(
-#     name='TractConverter',
-#     version='0.3.8',
-#     author='Marc-Alexandre Côté',
-#     author_email='marc-alexandre.cote@usherbrooke.ca',
-#     packages = find_packages(),
-#     scripts = ['distribute_setup.py'],
-#     entry_points = {
-#         'console_scripts': [
-#             'TractConverter = tractconverter.TractConverter:main',
-#             'WalkingTractConverter = tractconverter.WalkingTractConverter:main',
-#             ],
-#         'setuptools.installation': [
-#             'eggsecutable = tractconverter.WalkingTractConverter:main',
-#             ]
-#         },
-#     #url='http://pypi.python.org/pypi/TractConverter/',
-#     license='LICENSE.txt',
-#     description='Converter for white matter tract files used in neuroimaging.',
-#     long_description=open('README.txt').read(),
-#     install_requires=[
-#         'distribute',
-#         'numpy',
-#         'nibabel >= 1.1.0',
-#     ],
-# )
-
-
 ''' Installation script for tractconverter package '''
-#Inspired by setup.py of dipy (http://nipy.sourceforge.net/dipy/)
+# Inspired by setup.py of dipy (http://nipy.sourceforge.net/dipy/)
 
 import os
 import sys
@@ -82,10 +49,10 @@ if 'setuptools' in sys.modules:
         tests_require=['nose'],
         test_suite='nose.collector',
         zip_safe=False,
-        extras_require = dict(
+        extras_require=dict(
             doc=['Sphinx>=1.0'],
             test=['nose>=0.10.1']),
-        install_requires = ['nibabel>=' + NIBABEL_MIN_VERSION])
+        install_requires=['nibabel>=' + NIBABEL_MIN_VERSION])
 
     # We need setuptools install command because we're going to override it
     # further down.  Using distutils install command causes some confusion, due
@@ -110,18 +77,19 @@ EXTS = []
 # We may make tripwire versions of build_ext, build_py, install
 try:
     from nisext.sexts import package_check, get_comrec_build
-except ImportError: # No nibabel
+except ImportError:  # No nibabel
     msg = ('Need nisext package from nibabel installation'
            ' - please install nibabel first')
-    #pybuilder = derror_maker(build_py.build_py, msg)
-    #extbuilder = derror_maker(build_ext.build_ext, msg)
-#else: # We have nibabel
-    #pybuilder = get_comrec_build('tractconverter')
+    # pybuilder = derror_maker(build_py.build_py, msg)
+    # extbuilder = derror_maker(build_ext.build_ext, msg)
+# else: # We have nibabel
+    # pybuilder = get_comrec_build('tractconverter')
     # Cython is a dependency for building extensions, iff we don't have stamped
     # up pyx and c files.
-    #extbuilder = cyproc_exts(EXTS, CYTHON_MIN_VERSION, 'pyx-stamps')
+    # extbuilder = cyproc_exts(EXTS, CYTHON_MIN_VERSION, 'pyx-stamps')
 
 # Installer that checks for install-time dependencies
+
 
 class installer(install.install):
 
@@ -151,27 +119,21 @@ def main(**extra_args):
           version=VERSION,
           requires=REQUIRES,
           provides=PROVIDES,
-          packages     = ['tractconverter',
-                          'tractconverter.formats'
-                          ],
-          ext_modules = EXTS,
-          package_data = {'tractconverter':
-                          [pjoin('data', '*')
-                          ]},
+          packages=['tractconverter',
+                    'tractconverter.formats'
+                    ],
+          ext_modules=EXTS,
+          package_data={'tractconverter':
+                        [pjoin('data', '*')
+                         ]},
           data_files=[('share/doc/tractconverter/examples',
-                       glob(pjoin('doc','examples','*.py')))],
-          scripts      = glob(pjoin('scripts', '*')),
-          cmdclass = cmdclass,
-          entry_points = {
-                        'console_scripts': [
-                            'TractConverter = scripts.TractConverter:main',
-                            'WalkingTractConverter = scripts.WalkingTractConverter:main',
-                            ]
-                        },
+                       glob(pjoin('doc', 'examples', '*.py')))],
+          scripts=glob(pjoin('scripts', '*')),
+          cmdclass=cmdclass,
           **extra_args
-         )
+          )
 
-#simple way to test what setup will do
-#python setup.py install --prefix=/tmp
+# simple way to test what setup will do
+# python setup.py install --prefix=/tmp
 if __name__ == "__main__":
     main(**extra_setuptools_args)
