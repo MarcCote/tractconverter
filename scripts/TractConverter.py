@@ -53,10 +53,10 @@ def main():
     if not os.path.isfile(in_filename):
         parser.error('"{0}" must be an existing file!'.format(in_filename))
 
-    if tractconverter.is_supported(in_filename):
+    if not tractconverter.is_supported(in_filename):
         parser.error('Input file must be one of {0}!'.format(",".join(FORMATS.keys())))
 
-    if tractconverter.is_supported(out_filename):
+    if not tractconverter.is_supported(out_filename):
         parser.error('Output file must be one of {0}!'.format(",".join(FORMATS.keys())))
 
     if os.path.isfile(out_filename):
