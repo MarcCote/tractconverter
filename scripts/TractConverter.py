@@ -68,8 +68,8 @@ def main():
     inFormat = tractconverter.detect_format(in_filename)
     outFormat = tractconverter.detect_format(out_filename)
 
-    if type(inFormat) == type(outFormat):
-        parser.error('Input and output must be from different types!'.format(",".join(FORMATS.keys())))
+    #if inFormat == outFormat:
+    #    parser.error('Input and output must be from different types!'.format(",".join(FORMATS.keys())))
 
     if anat_filename is not None:
         if not any(map(anat_filename.endswith, EXT_ANAT.split('|'))):
