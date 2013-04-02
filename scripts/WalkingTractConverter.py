@@ -22,7 +22,7 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
         root = root + "/"
         nbFiles = 0
         for k, v in p_conversions.items():
-            files = [f for f in allFiles if FORMATS[k]._check(root + f, p_anatFile)]
+            files = [f for f in allFiles if FORMATS[k]._check(root + f)]
             for f in files:
                 nbFiles += 1
                 inFile = root + f
