@@ -36,6 +36,13 @@ class TCK:
     # Static Methods
     ###
     @staticmethod
+    def _check(filename):
+        f = open(filename, 'rb')
+        magicNumber = f.readline()
+        f.close()
+        return magicNumber.strip() == TCK.MAGIC_NUMBER
+
+    @staticmethod
     def create(filename, hdr, anatFile=None):
         f = open(filename, 'wb')
         f.write(TCK.MAGIC_NUMBER + "\n")
@@ -52,24 +59,16 @@ class TCK:
     # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
-        self.filename = filename
-        if not self._check():
+        if not TCK._check(filename):
             raise NameError("Not a TCK file.")
 
+        self.filename = filename
         self.hdr = {}
         if load:
             self._calcTransform(anatFile)
             self._load()
 
         self.mode = READING
-
-    def _check(self):
-        f = open(self.filename, 'rb')
-
-        magicNumber = f.readline()
-
-        f.close()
-        return magicNumber.strip() == TCK.MAGIC_NUMBER
 
     def _load(self):
         f = open(self.filename, 'rb')

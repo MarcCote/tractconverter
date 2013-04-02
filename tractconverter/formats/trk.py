@@ -27,6 +27,13 @@ class TRK:
     # Static Methods
     ###
     @staticmethod
+    def _check(filename):
+        f = open(filename, 'rb')
+        magicNumber = f.read(5)
+        f.close()
+        return magicNumber == TRK.MAGIC_NUMBER
+
+    @staticmethod
     def create(filename, hdr, anatFile=None):
         f = open(filename, 'wb')
         f.write(TRK.MAGIC_NUMBER + "\n")
@@ -42,19 +49,13 @@ class TRK:
     # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
-        self.filename = filename
-        if not self._check():
+        if not TRK._check(filename):
             raise NameError("Not a TRK file.")
 
+        self.filename = filename
         self.hdr = {}
         if load:
             self._load()
-
-    def _check(self):
-        f = open(self.filename, 'rb')
-        magicNumber = f.read(5)
-        f.close()
-        return magicNumber == self.MAGIC_NUMBER
 
     def _load(self):
         f = open(self.filename, 'rb')

@@ -27,7 +27,7 @@ def detect_format(filename):
         return filename[-3:] in FORMATS.keys()
 
     for format in FORMATS.values():
-        if format(filename)._check():
+        if format._check(filename):
             return format
 
     return None

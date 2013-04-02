@@ -107,6 +107,13 @@ class VTK:
     # Static Methods
     ###
     @staticmethod
+    def _check(filename):
+        f = open(filename, 'rb')
+        magicNumber = f.readline()
+        f.close()
+        return VTK.MAGIC_NUMBER in magicNumber
+
+    @staticmethod
     def create(filename, hdr, anatFile=None):
         f = open(filename, 'wb')
         f.write(VTK.MAGIC_NUMBER + "\n")
@@ -122,11 +129,11 @@ class VTK:
     # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
+        if not VTK._check(filename):
+            raise NameError("Not a VTK file.")
+
         self.filename = filename
         self.original_filename = filename
-
-        if not self._check():
-            raise NameError("Not a VTK file.")
 
         self.hdr = {}
         if load:
@@ -134,12 +141,6 @@ class VTK:
 
     def __del__(self):
         self.cleanTempFile()
-
-    def _check(self):
-        f = open(self.filename, 'rb')
-        magicNumber = f.readline()
-        f.close()
-        return VTK.MAGIC_NUMBER in magicNumber
 
     def _load(self):
         f = open(self.filename, 'rb')

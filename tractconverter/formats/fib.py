@@ -13,6 +13,10 @@ class FIB:
     # Static Methods
     ###
     @staticmethod
+    def _check(filename):
+        return filename[-3:].lower() == FIB.MAGIC_NUMBER
+
+    @staticmethod
     def create(filename, hdr, anatFile=None):
         f = open(filename, 'wb')
         f.write(FIB.MAGIC_NUMBER + "\n")
@@ -28,16 +32,13 @@ class FIB:
     # Methods
     ###
     def __init__(self, filename, anatFile=None, load=True):
-        self.filename = filename
-        if not self._check():
+        if not FIB._check(filename):
             raise NameError("Not a FIB file.")
 
+        self.filename = filename
         self.hdr = {}
         if load:
             self._load()
-
-    def _check(self):
-        return self.filename[-3:].lower() == self.MAGIC_NUMBER
 
     def _load(self):
         f = open(self.filename, 'rb')
