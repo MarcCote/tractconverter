@@ -24,7 +24,7 @@ def is_supported(filename):
 
 def detect_format(filename):
     if not os.path.isfile(filename):
-        return filename[-3:] in FORMATS.keys()
+        return FORMATS.get(filename[-3:], None)
 
     for format in FORMATS.values():
         if format._check(filename):
