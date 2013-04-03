@@ -23,8 +23,8 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
         nbFiles = 0
         for k, v in p_conversions.items():
             #files = [f for f in allFiles if FORMATS[k]._check(root + f)]
-            for f in allFiles:
-                logging.info('{0}/{1} files'.format(nbFiles, len(allFiles)))
+            for i, f in enumerate(allFiles):
+                logging.info('{0}/{1} files'.format(i, len(allFiles)))
 
                 if not FORMATS[k]._check(root + f):
                     logging.info('Skip')
@@ -43,7 +43,7 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
                     continue
 
                 input = FORMATS[k](inFile, p_anatFile)
-                output = FORMATS[k](outFile, input.hdr, p_anatFile)
+                output = FORMATS[v].create(outFile, input.hdr, p_anatFile)
                 tractconverter.convert(input, output)
                 logging.info(inFile)
 
