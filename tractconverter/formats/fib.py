@@ -2,6 +2,7 @@
 
 import numpy as np
 from tractconverter.formats.header import Header
+from vtk import VTK
 
 
 class FIB:
@@ -14,6 +15,9 @@ class FIB:
     ###
     @staticmethod
     def _check(filename):
+        if VTK._check(filename):
+            return False
+
         return filename[-3:].lower() == FIB.MAGIC_NUMBER
 
     @staticmethod
@@ -46,7 +50,7 @@ class FIB:
         #####
         # Read header
         ###
-        # Skip "magic number"
+        # Skip pseudo "magic number"
         f.readline()
 
         # Skip the 5 next lines
