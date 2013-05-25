@@ -17,7 +17,7 @@ READING = "READING"
 
 class TCK:
     MAGIC_NUMBER = "mrtrix tracks"
-    BUFFER_SIZE = 10000
+    BUFFER_SIZE = 1000000
 
     FIBER_DELIMITER = np.array([[np.nan, np.nan, np.nan]], '<f4')
     EOF_DELIMITER = np.array([[np.inf, np.inf, np.inf]], '<f4')
@@ -106,7 +106,7 @@ class TCK:
             remainingBytes -= nbBytesToRead
 
             pts = pts.reshape([-1, 3])
-            nbNaNs = sum(np.isnan(pts[:, 0]))
+            nbNaNs = np.isnan(pts[:, 0]).sum()
             self.hdr[Header.NB_FIBERS] += nbNaNs
             self.hdr[Header.NB_POINTS] += len(pts) - nbNaNs
 
@@ -234,8 +234,10 @@ class TCK:
             if len(idxNaN) == 0:
                 continue
 
+            print remainingBytes
             nbPts = len(pts[:idxNaN[0], :])
             yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
+            print remainingBytes
 
             # Remove pts plus the first triplet of NaN.
             nbBytesToRemove = (nbPts + 1) * 3 * self.dtype.itemsize
