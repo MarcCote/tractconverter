@@ -33,7 +33,7 @@ def detect_format(filename):
     return None
 
 
-def convert(input, output):
+def convert(input, output, verbose=False):
     nbFibers = 0
     fibers = []
     for i, f in enumerate(input):
@@ -41,6 +41,9 @@ def convert(input, output):
         if (i + 1) % 100 == 0:
             output += fibers
             fibers = []
+
+        if i % 1000 == 0:
+            logging.info('(' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
         nbFibers += 1
 

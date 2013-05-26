@@ -234,15 +234,17 @@ class TCK:
             if len(idxNaN) == 0:
                 continue
 
-            print remainingBytes
-            nbPts = len(pts[:idxNaN[0], :])
-            yield np.dot(c_[pts[:idxNaN[0], :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
-            print remainingBytes
+            nbPts_total = 0
+            idx_start = 0
+            for idx_end in idxNaN:
+                nbPts = len(pts[idx_start:idx_end, :])
+                nbPts_total += nbPts
+                yield np.dot(c_[pts[idx_start:idx_end, :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
+                idx_start = idx_end + 1
 
             # Remove pts plus the first triplet of NaN.
-            nbBytesToRemove = (nbPts + 1) * 3 * self.dtype.itemsize
+            nbBytesToRemove = (nbPts_total + len(idxNaN)) * 3 * self.dtype.itemsize
             buff = buff[nbBytesToRemove:]
-            idxNaN = idxNaN[1:]
 
         f.close()
 
