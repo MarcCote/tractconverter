@@ -267,4 +267,4 @@ class TCK:
         idxNaN -= np.arange(len(idxNaN))
 
         streamlines = np.split(pts, idxNaN)
-        return map(lambda s: np.dot(c_[s, np.ones(len(s), dtype='<f4')], self.invM)[:, :-1], streamlines)
+        return [np.dot(c_[s, np.ones(len(s), dtype='<f4')], self.invM)[:, :-1] for s in streamlines if s.shape[0] > 0]
