@@ -239,7 +239,10 @@ class TCK:
             for idx_end in idxNaN:
                 nbPts = len(pts[idx_start:idx_end, :])
                 nbPts_total += nbPts
+
+                #if nbPts > 0:
                 yield np.dot(c_[pts[idx_start:idx_end, :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
+
                 idx_start = idx_end + 1
 
             # Remove pts plus the first triplet of NaN.
