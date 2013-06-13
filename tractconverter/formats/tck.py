@@ -155,8 +155,8 @@ class TCK:
         # for the moment, use this scaling. Therefore, we must remove it from the
         # the transformation matrix before computing its inverse.
         if anatFile is None:
-            self.M = np.identity(4)
-            self.invM = np.identity(4)
+            self.M = np.identity(4, dtype='<f4')
+            self.invM = np.identity(4, dtype='<f4')
             return
 
         anat = nibabel.load(anatFile)
@@ -240,8 +240,8 @@ class TCK:
                 nbPts = len(pts[idx_start:idx_end, :])
                 nbPts_total += nbPts
 
-                #if nbPts > 0:
-                yield np.dot(c_[pts[idx_start:idx_end, :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
+                if nbPts > 0:
+                    yield np.dot(c_[pts[idx_start:idx_end, :], np.ones([nbPts, 1], dtype='<f4')], self.invM)[:, :-1]
 
                 idx_start = idx_end + 1
 

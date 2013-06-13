@@ -140,8 +140,9 @@ class TRK:
         while cpt < self.hdr[Header.NB_FIBERS] or remainingBytes > 0:
             # Read points
             nbPoints = readBinaryBytes(f, 1, np.dtype(self.endian + "i4"))[0]
-            ptsAndScalars = readBinaryBytes(
-                f, nbPoints * (3 + self.hdr[Header.NB_SCALARS_BY_POINT]), np.dtype(self.endian + "f4"))
+            ptsAndScalars = readBinaryBytes(f,
+                                            nbPoints * (3 + self.hdr[Header.NB_SCALARS_BY_POINT]),
+                                            np.dtype(self.endian + "f4"))
 
             newShape = [-1, 3 + self.hdr[Header.NB_SCALARS_BY_POINT]]
             ptsAndScalars = ptsAndScalars.reshape(newShape)
