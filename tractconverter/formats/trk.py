@@ -64,12 +64,15 @@ class TRK:
         # Read header
         ###
         f.seek(12) # Skip to voxel size.
+        
         buffer = f.read(4)
-        self.hdr[Header.VOXEL_SIZE_X] = np.frombuffer(buffer, dtype='<f4')[0]
+        voxel_size_x = np.frombuffer(buffer, dtype='<f4')[0]
         buffer = f.read(4)
-        self.hdr[Header.VOXEL_SIZE_Y] = np.frombuffer(buffer, dtype='<f4')[0]
+        voxel_size_y = np.frombuffer(buffer, dtype='<f4')[0]
         buffer = f.read(4)
-        self.hdr[Header.VOXEL_SIZE_Z] = np.frombuffer(buffer, dtype='<f4')[0]
+        voxel_size_z = np.frombuffer(buffer, dtype='<f4')[0]
+        
+        self.hdr[Header.VOXEL_SIZES] = (voxel_size_x, voxel_size_y, voxel_size_z)
         
         ## Read number of scalars appended to each point of a tract.
         f.seek(36)  # Skip to n_scalars
@@ -118,9 +121,7 @@ class TRK:
 
     def writeHeader(self):
         # Get the voxel size and format it as an array.
-        voxel_sizes = np.array([self.hdr.get(Header.VOXEL_SIZE_X, 1.0), \
-                                self.hdr.get(Header.VOXEL_SIZE_Y, 1.0), \
-                                self.hdr.get(Header.VOXEL_SIZE_Z, 1.0)], dtype='<f4')
+        voxel_sizes = np.asarray(self.hdr.get(Header.VOXEL_SIZES, (1.0, 1.0, 1.0)), dtype='f4')
 
         f = open(self.filename, 'wb')
         f.write(self.MAGIC_NUMBER)
