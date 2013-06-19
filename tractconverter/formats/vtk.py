@@ -67,11 +67,18 @@ def convertAsciiToBinary(original_filename):
     tokens = temp_line.split()
 
     # Write all the points up to the moment we find the LINES marker.
-    while tokens[0] != "LINES":
+    while tokens[0] != "LINES" and tokens[0] != "VERTICES":
         tokens_num = np.array(' '.join(tokens).split(), dtype='>f4')
         binary_file.write(tokens_num.astype('>f4').tostring())
         temp_line = f.readline()
         tokens = temp_line.split()
+    
+    # If we get the VERTICES token, we skip over it (for now) and iterate until
+    # we find the LINES marker.
+    if tokens[0] == "VERTICES":
+        while len(tokens) == 0 or tokens[0] != "LINES":
+            temp_line = f.readline()
+            tokens = temp_line.split()
 
     # Write the line containing the LINES marker.
     binary_file.write('\n')
@@ -182,9 +189,6 @@ class VTK:
         infos = f.readline().split()  # LINES n size
         self.hdr[Header.NB_FIBERS] = int(infos[1])
         size = int(infos[2])
-
-        if size != self.hdr[Header.NB_FIBERS] + self.hdr[Header.NB_POINTS]:
-            print "ERROR!!!!"
 
         self.offset_lines = f.tell()
         f.seek(size * 4, 1)  # Skip nb_lines + nb_points * 4 bytes
