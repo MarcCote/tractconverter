@@ -12,3 +12,4 @@ class Header():
     NB_SCALARS_BY_POINT = 3
     NB_PROPERTIES_BY_TRACT = 4
     NB_POINTS = 5
+    VOXEL_SIZES = 6
