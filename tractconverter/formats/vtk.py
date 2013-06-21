@@ -67,7 +67,7 @@ def convertAsciiToBinary(original_filename):
     tokens = temp_line.split()
 
     # Write all the points up to the moment we find the LINES marker.
-    while tokens[0] != "LINES" and tokens[0] != "VERTICES":
+    while len(tokens) == 0 or (tokens[0] != "LINES" and tokens[0] != "VERTICES"):
         tokens_num = np.array(' '.join(tokens).split(), dtype='>f4')
         binary_file.write(tokens_num.astype('>f4').tostring())
         temp_line = f.readline()
