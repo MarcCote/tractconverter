@@ -10,6 +10,7 @@ from pdb import set_trace as dbg
 from numpy import linalg
 import nibabel
 from tractconverter.formats.header import Header
+from tractconverter.formats import header
 from numpy.lib.index_tricks import c_, r_
 
 WRITING = "WRITING"
@@ -66,6 +67,7 @@ class TCK:
         self.hdr = {}
         if load:
             self._calcTransform(anatFile)
+            header.set_header_from_anat(anatFile, self.hdr)
             self._load()
 
         self.mode = READING

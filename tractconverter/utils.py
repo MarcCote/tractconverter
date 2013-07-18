@@ -6,8 +6,6 @@ from tractconverter.formats.trk import TRK
 from tractconverter.formats.fib import FIB
 from tractconverter.formats.vtk import VTK
 
-from tractconverter.formats.header import Header
-
 # Supported format
 FORMATS = {"tck": TCK,
            "trk": TRK,
@@ -34,6 +32,8 @@ def detect_format(filename):
 
 
 def convert(input, output, verbose=False):
+    from tractconverter.formats.header import Header
+
     nbFibers = 0
     fibers = []
     for i, f in enumerate(input):
@@ -51,3 +51,4 @@ def convert(input, output, verbose=False):
     output.close()
 
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
+

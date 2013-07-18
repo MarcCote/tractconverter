@@ -7,13 +7,19 @@ Created on 2012-02-10
 import argparse
 import logging
 import os
+import tractconverter.info as info
 
 import tractconverter
 from tractconverter import FORMATS
 from tractconverter import EXT_ANAT
 
 # Script description
-DESCRIPTION = 'Convert track files for {0}'.format(",".join(FORMATS.keys()))
+DESCRIPTION = """
+TractConverter {0}.
+Convert track files.
+Supported formats are {1}
+""".format(info.__version__,
+           ",".join(FORMATS.keys()))
 
 
 #####
