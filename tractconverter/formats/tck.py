@@ -13,8 +13,6 @@ from tractconverter.formats.header import Header
 from tractconverter.formats import header
 from numpy.lib.index_tricks import c_, r_
 
-WRITING = "WRITING"
-READING = "READING"
 
 class TCK:
     MAGIC_NUMBER = "mrtrix tracks"
@@ -67,10 +65,8 @@ class TCK:
         self.hdr = {}
         if load:
             self._calcTransform(anatFile)
-            header.set_header_from_anat(anatFile, self.hdr)
+            self.hdr = header.get_header_from_anat(anatFile)
             self._load()
-
-        self.mode = READING
 
     def _load(self):
         f = open(self.filename, 'rb')
@@ -133,16 +129,11 @@ class TCK:
 
         f.write(str(self.offset) + "\n")
         f.write("END\n")
+        f.write(self.EOF_DELIMITER.tostring())
         f.close()
 
-        self.mode = WRITING
-
     def close(self):
-        #If previously opened in writing mode, append end of file delimiter.
-        if self.mode == WRITING:
-            f = open(self.filename, 'ab')
-            f.write(self.EOF_DELIMITER.tostring())
-            f.close()
+        pass
 
     def _calcTransform(self, anatFile):
         # The MrTrix fibers are defined in the same geometric reference
@@ -178,48 +169,26 @@ class TCK:
         fibers = np.concatenate(fibers)
         fibers = np.dot(c_[fibers, np.ones([len(fibers), 1], dtype='<f4')], self.M)[:, :-1]
 
-        f = open(self.filename, 'ab')
+        f = open(self.filename, 'rw+b')
+        f.seek(-len(self.EOF_DELIMITER.tostring()), os.SEEK_END)
         f.write(fibers.tostring())
+        f.write(self.EOF_DELIMITER.tostring())
         f.close()
 
         return self
-
-    # TODO:
-    #    voxelSize = [0,0,0]
-    #    if anatFile is not None:
-    #        # The MrTrix fibers are defined in the same geometric reference
-    #        # as the anatomical file. That is, the fibers coordinates are related to
-    #        # the anatomy in world space. The transformation from local to world space
-    #        # for the anatomy is encoded in the m_dh->m_niftiTransform member.
-    #        # Since we do not consider this tranform when loading the anatomy, we must
-    #        # bring back the fibers in the same reference, using the inverse of the
-    #        # local to world transformation. A further problem arises when loading an
-    #        # anatomy that has voxels with dimensions differing from 1x1x1. The
-    #        # scaling factor is encoded in the transformation matrix, but we do not,
-    #        # for the moment, use this scaling. Therefore, we must remove it from the
-    #        # the transformation matrix before computing its inverse.
-    #        anat = nibabel.load(anatFile)
-    #        voxelSize = list(anat.get_header().get_zooms())
-    #
-    #        M = anat.get_header().get_qform()
-    #        idxDiag = np.diag(np.diag(M)) != 0;
-    #        M[idxDiag] /= voxelSize + [1]
-    #        M = linalg.inv(M)
-    #
-    #        pts = np.dot(c_[pts, np.ones([len(pts), 1])], M.T)[:,:-1]
 
     #####
     # Iterate through fibers
     ###
     def __iter__(self):
         buff = ""
-        idxNaN = []
+        pts = []
 
         f = open(self.filename, 'rb')
         f.seek(self.offset)
         remainingBytes = os.path.getsize(self.filename) - self.offset
 
-        while remainingBytes > 0 or len(buff) > 3 * self.dtype.itemsize:
+        while remainingBytes > 0 or np.all(np.isinf(pts)):
             if remainingBytes > 0:
                 nbBytesToRead = min(remainingBytes, TCK.BUFFER_SIZE * 3 * self.dtype.itemsize)
                 buff += f.read(nbBytesToRead)  # Read BUFFER_SIZE triplets of coordinates (float)

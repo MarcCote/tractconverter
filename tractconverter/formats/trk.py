@@ -46,98 +46,6 @@ class TRK:
 
         return trk
 
-    def infos(self):
-        f = open(self.filename, 'rb')
-
-        #####
-        # Read header
-        ###
-        id_string = f.read(6)
-        buffer = f.read(6)
-        dimensions = np.frombuffer(buffer, dtype='<i2')
-
-        buffer = f.read(12)
-        voxel_sizes = np.frombuffer(buffer, dtype='<f4')
-        self.hdr[H.VOXEL_SIZES] = tuple(voxel_sizes)
-
-        buffer = f.read(12)
-        origin = np.frombuffer(buffer, dtype='<f4')
-
-        buffer = f.read(2)
-        nb_scalars = np.frombuffer(buffer, dtype='<i2')[0]
-        self.hdr[H.NB_SCALARS_BY_POINT] = nb_scalars
-
-        scalar_name = [f.read(20) for i in range(10)]
-
-        buffer = f.read(2)
-        nb_properties = np.frombuffer(buffer, dtype='<i2')[0]
-        self.hdr[H.NB_PROPERTIES_BY_TRACT] = nb_properties
-
-        property_name = [f.read(20) for i in range(10)]
-
-        buffer = f.read(64)
-        vox_to_ras = np.frombuffer(buffer, dtype='<f4').reshape(4, 4)
-
-        # Skip reserved bytes
-        f.seek(444, os.SEEK_CUR)
-
-        voxel_order = f.read(4)
-        pad2 = f.read(4)
-
-        buffer = f.read(24)
-        image_orientation_patient = np.frombuffer(buffer, dtype='<f4')
-
-        pad1 = f.read(2)
-
-        invert_x = f.read(1) == '\x01'
-        invert_y = f.read(1) == '\x01'
-        invert_z = f.read(1) == '\x01'
-        swap_xy = f.read(1) == '\x01'
-        swap_yz = f.read(1) == '\x01'
-        swap_zx = f.read(1) == '\x01'
-
-        buffer = f.read(4 + 4 + 4)
-        infos = np.frombuffer(buffer, dtype='<i4')
-
-        print infos
-
-        # Check if little or big endian
-        self.hdr[H.ENDIAN] = '<'
-        if infos[2] != 1000:
-            infos = np.frombuffer(buffer, dtype='>i4')
-            self.hdr[H.ENDIAN] = '>'
-
-        n_count = infos[0]
-        version = infos[1]
-        hdr_size = infos[2]
-
-        f.close()
-
-        #Display infos
-        print "MAGIC NUMBER: {0}".format(id_string)
-        print "v.{0}".format(version)
-        print "dim: {0}".format(dimensions)
-        print "voxel_sizes: {0}".format(voxel_sizes)
-        print "orgin: {0}".format(origin)
-        print "nb_scalars: {0}".format(nb_scalars)
-        print "scalar_name:\n {0}".format("\n".join(scalar_name))
-        print "nb_properties: {0}".format(nb_properties)
-        print "property_name:\n {0}".format("\n".join(property_name))
-        print "vox_to_ras: {0}".format(vox_to_ras)
-        print "voxel_order: {0}".format(voxel_order)
-        print "image_orientation_patient: {0}".format(image_orientation_patient)
-        print "pad1: {0}".format(pad1)
-        print "pad2: {0}".format(pad2)
-        print "invert_x: {0}".format(invert_x)
-        print "invert_y: {0}".format(invert_y)
-        print "invert_z: {0}".format(invert_z)
-        print "swap_xy: {0}".format(swap_xy)
-        print "swap_yz: {0}".format(swap_yz)
-        print "swap_zx: {0}".format(swap_zx)
-        print "n_count: {0}".format(n_count)
-        print "hdr_size: {0}".format(hdr_size)
-        print "endianess: {0}".format(self.hdr[H.ENDIAN])
-
     #####
     # Methods
     ###
@@ -217,7 +125,7 @@ class TRK:
                          'the actual number of streamlines contained in this file ({1}). ' +
                          'The latter will be used.'.format(self.hdr[H.NB_FIBERS], nb_fibers))
 
-            self.hdr[H.NB_FIBERS] = nb_fibers
+        self.hdr[H.NB_FIBERS] = nb_fibers
 
         f.close()
 
@@ -293,3 +201,32 @@ class TRK:
             cpt += 1
 
         f.close()
+
+    def __str__(self):
+        text = ""
+        text += "MAGIC NUMBER: {0}".format(self.hdr[H.MAGIC_NUMBER])
+        text += "v.{0}".format(self.hdr['version'])
+        text += "dim: {0}".format(self.hdr[H.DIMENSIONS])
+        text += "voxel_sizes: {0}".format(self.hdr[H.VOXEL_SIZES])
+        text += "orgin: {0}".format(self.hdr[H.ORIGIN])
+        text += "nb_scalars: {0}".format(self.hdr[H.NB_SCALARS_BY_POINT])
+        text += "scalar_name:\n {0}".format("\n".join(self.hdr['scalar_name']))
+        text += "nb_properties: {0}".format(self.hdr[H.NB_PROPERTIES_BY_TRACT])
+        text += "property_name:\n {0}".format("\n".join(self.hdr['property_name']))
+        text += "vox_to_world: {0}".format(self.hdr[H.VOXEL_TO_WORLD])
+        text += "world_order: {0}".format(self.hdr[H.WORLD_ORDER])
+        text += "voxel_order: {0}".format(self.hdr[H.VOXEL_ORDER])
+        text += "image_orientation_patient: {0}".format(self.hdr['image_orientation_patient'])
+        text += "pad1: {0}".format(self.hdr['pad1'])
+        text += "pad2: {0}".format(self.hdr['pad2'])
+        text += "invert_x: {0}".format(self.hdr['invert_x'])
+        text += "invert_y: {0}".format(self.hdr['invert_y'])
+        text += "invert_z: {0}".format(self.hdr['invert_z'])
+        text += "swap_xy: {0}".format(self.hdr['swap_xy'])
+        text += "swap_yz: {0}".format(self.hdr['swap_yz'])
+        text += "swap_zx: {0}".format(self.hdr['swap_zx'])
+        text += "n_count: {0}".format(self.hdr[H.NB_FIBERS])
+        text += "hdr_size: {0}".format(self.hdr['hdr_size'])
+        text += "endianess: {0}".format(self.hdr[H.ENDIAN])
+
+        return text

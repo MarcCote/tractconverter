@@ -3,6 +3,7 @@ Created on 2012-02-22
 
 @author: coteharn
 '''
+import nibabel as nib
 
 
 class Header:
@@ -22,8 +23,18 @@ class Header:
     ENDIAN = 13
 
 
-def set_header_from_anat(anat_file, hdr):
-    import nibabel
-    anat = nibabel.load(anat_file)
-    hdr[Header.VOXEL_SIZES] = list(anat.get_header().get_zooms())[:3]
-    hdr[Header.DIMENSIONS] = list(anat.get_header().get_data_shape())
+def get_header_from_anat(anat_file):
+    hdr = {}
+    if anat_file is None:
+        # Defaults
+        hdr[Header.VOXEL_SIZES] = (0, 0, 0)
+        hdr[Header.DIMENSIONS] = (1, 1, 1)
+
+        return hdr
+
+    anat = nib.load(anat_file)
+
+    hdr[Header.VOXEL_SIZES] = tuple(anat.get_header().get_zooms())[:3]
+    hdr[Header.DIMENSIONS] = tuple(anat.get_header().get_data_shape())
+
+    return hdr
