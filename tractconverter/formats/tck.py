@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 # Documentation available here:
-# http://www.brain.org.au/software/mrtrix/appendix/mrtrix.html
+# http://www.brain.org.au/software/mrtrix/appendix/mrtrix.html#tracks
 
 import os
 import numpy as np

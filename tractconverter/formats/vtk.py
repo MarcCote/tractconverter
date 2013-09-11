@@ -3,6 +3,8 @@
 # Documentation available here:
 # http://www.vtk.org/VTK/img/file-formats.pdf
 
+from pdb import set_trace as dbg
+
 import os
 import tempfile
 import numpy as np
@@ -38,6 +40,8 @@ def checkIfBinary(f):
     return file_type == "BINARY\n"
 
 def convertAsciiToBinary(original_filename):
+    sections = get_sections(original_filename)
+
     f = open(original_filename, 'rb')
 
     # Skip the first header lines
@@ -51,7 +55,7 @@ def convertAsciiToBinary(original_filename):
 
     # Create a temporary file with a name. Delete is set to false to make sure
     # the file is not automatically deleted when closed.
-    binary_file = tempfile.NamedTemporaryFile(delete = False)
+    binary_file = tempfile.NamedTemporaryFile(delete=False)
 
     # Write header
     binary_file.write("# {0} DataFile Version {1}\n".format(VTK.MAGIC_NUMBER, VTK.VERSION))
@@ -59,39 +63,43 @@ def convertAsciiToBinary(original_filename):
     binary_file.write("BINARY\n")
     binary_file.write("DATASET POLYDATA\n")
 
-    temp_line = f.readline() # POINTS n float
-    binary_file.write(temp_line)
-
-    # Initialize for the loop.
-    temp_line = f.readline()
-    tokens = temp_line.split()
-
-    # Write all the points up to the moment we find the LINES marker.
-    while len(tokens) == 0 or (tokens[0] != "LINES" and tokens[0] != "VERTICES"):
-        tokens_num = np.array(' '.join(tokens).split(), dtype='>f4')
-        binary_file.write(tokens_num.astype('>f4').tostring())
-        temp_line = f.readline()
-        tokens = temp_line.split()
+    # Convert POINTS section from ASCII to binary
+    f.seek(sections['POINTS'], os.SEEK_SET)
+    line = f.readline()  # POINTS n float
+    nb_coordinates = int(line.split()[1]) * 3
+    binary_file.write(line)
     
-    # If we get the VERTICES token, we skip over it (for now) and iterate until
-    # we find the LINES marker.
-    if tokens[0] == "VERTICES":
-        while len(tokens) == 0 or tokens[0] != "LINES":
-            temp_line = f.readline()
-            tokens = temp_line.split()
+    while nb_coordinates * 3 > 0:
+        tokens = f.readline().split()
 
-    # Write the line containing the LINES marker.
+        #Skip empty lines
+        if len(tokens) == 0:
+            continue
+
+        binary_file.write(np.array(tokens, dtype='>f4').tostring())
+        nb_coordinates -= len(tokens)
+
     binary_file.write('\n')
-    binary_file.write(temp_line)
 
-    # Write all the lines
-    nb_lines = int(tokens[1])
+    if 'LINES' in sections:
+        # Convert LINES section from ASCII to binary
+        f.seek(sections['LINES'], os.SEEK_SET)
+        line = f.readline()  # LINES n size
+        nb_lines = int(line.split()[1])
+        binary_file.write(line)
 
-    for line_idx in range(nb_lines):
-        nb_pts = readAsciiBytes(f, 1, np.dtype('>i4'))[0]
-        pts_idx = readAsciiBytes(f, nb_pts, np.dtype('>i4'))
-        binary_file.write(np.array([nb_pts], dtype='>i4').tostring())
-        binary_file.write(pts_idx.astype('>i4').tostring())
+        while nb_lines > 0:
+            tokens = f.readline().split()
+
+            #Skip empty lines
+            if len(tokens) == 0:
+                continue
+
+            #Write number of points in the line
+            binary_file.write(np.array([tokens[0]], dtype='>i4').tostring())
+            #Write indices of points in the line
+            binary_file.write(np.array(tokens[1:], dtype='>i4').tostring())
+            nb_lines -= 1
 
     # TODO: COLORS, SCALARS
 
@@ -99,6 +107,26 @@ def convertAsciiToBinary(original_filename):
     f.close()
 
     return binary_file.name
+
+POLYDATA_SECTIONS = ['POINTS', 'VERTICES', 'LINES', 'POLYGONS', 'TRIANGLE_STRIPS']
+
+def get_sections(filename):
+    sections_found = {}
+    nb_read_bytes = 0
+    with open(filename, 'rb') as f:
+        for line in f:
+            for section in POLYDATA_SECTIONS:
+                if line.startswith(section):
+                    if section in sections_found:
+                        print "Warning multiple {0} sections!".format(section)
+
+                    sections_found[section] = nb_read_bytes
+
+            nb_read_bytes += len(line)
+
+    return sections_found
+
+
 
 class VTK:
     MAGIC_NUMBER = "vtk"
@@ -167,6 +195,7 @@ class VTK:
             binary_filename = convertAsciiToBinary(self.filename)
             self.filename = binary_filename
 
+        self.sections = get_sections(self.filename)
         f = open(self.filename, 'rb')
 
         #####
@@ -177,27 +206,32 @@ class VTK:
         self.fileType = f.readline()  # Type of the file BINARY or ASCII.
         f.readline()  # Data type (not used)
 
-        self.offset = f.tell()  # Store offset to the beginning of data.
+        #self.offset = f.tell()  # Store offset to the beginning of data.
 
+        f.seek(self.sections['POINTS'], os.SEEK_SET)
         self.hdr[Header.NB_POINTS] = int(f.readline().split()[1])  # POINTS n float
-        self.offset_points = f.tell()
+        #self.offset_points = f.tell()
 
-        f.seek(self.hdr[Header.NB_POINTS] * 3 * 4, 1)  # Skip nb_points * 3 (x,y,z) * 4 bytes
+        #f.seek(self.hdr[Header.NB_POINTS] * 3 * 4, 1)  # Skip nb_points * 3 (x,y,z) * 4 bytes
         # Skip newline, to bring to the line containing the LINES marker.
-        f.readline()
+        #f.readline()
 
-        infos = f.readline().split()  # LINES n size
-        self.hdr[Header.NB_FIBERS] = int(infos[1])
-        size = int(infos[2])
+        self.hdr[Header.NB_FIBERS] = 0
+        if 'LINES' in self.sections:
+            f.seek(self.sections['LINES'], os.SEEK_SET)
+            infos = f.readline().split()  # LINES n size
+            self.hdr[Header.NB_FIBERS] = int(infos[1])
+            #size = int(infos[2])
 
-        self.offset_lines = f.tell()
-        f.seek(size * 4, 1)  # Skip nb_lines + nb_points * 4 bytes
+            #self.offset_lines = f.tell()
+            #f.seek(size * 4, 1)  # Skip nb_lines + nb_points * 4 bytes
 
         # TODO: Read infos about COLORS, SCALARS, ...
 
         f.close()
 
     def writeHeader(self):
+        self.sections = {}
         f = open(self.filename, 'wb')
         f.write("# {0} DataFile Version {1}\n".format(VTK.MAGIC_NUMBER, VTK.VERSION))
         f.write("vtk comments\n")
@@ -205,18 +239,22 @@ class VTK:
         f.write("DATASET POLYDATA\n")
 
         # POINTS
+        self.sections['POINTS'] = f.tell()
         f.write("POINTS {0} float\n".format(self.hdr[Header.NB_POINTS]))
-        self.offset = f.tell()
-        self.offset_points = f.tell()
+        self.sections['POINTS_start'] = f.tell()
+        self.sections['POINTS_current'] = f.tell()
+        #self.offset = f.tell()
         f.write(np.zeros((self.hdr[Header.NB_POINTS], 3), dtype='>f4'))
 
         f.write('\n')
 
         # LINES
-        size = self.hdr[Header.NB_FIBERS] + self.hdr[Header.NB_POINTS]
-        f.write("LINES {0} {1}\n".format(self.hdr[Header.NB_FIBERS], size))
-        self.offset_lines = f.tell()
-        f.write(np.zeros(size, dtype='>i4'))
+        if self.hdr[Header.NB_FIBERS] > 0:
+            self.sections['LINES'] = f.tell()
+            size = self.hdr[Header.NB_FIBERS] + self.hdr[Header.NB_POINTS]
+            f.write("LINES {0} {1}\n".format(self.hdr[Header.NB_FIBERS], size))
+            self.sections['LINES_current'] = f.tell()
+            f.write(np.zeros(size, dtype='>i4'))
 
         # TODO: COLORS, SCALARS
 
@@ -235,21 +273,21 @@ class VTK:
 
     def __iadd__(self, fibers):
         f = open(self.filename, 'r+b')
-        f.seek(self.offset_points, 0)
+        f.seek(self.sections['POINTS_current'], os.SEEK_SET)
 
-        nb_points = (self.offset_points - self.offset) / 3 / 4
+        nb_points = (self.sections['POINTS_current'] - self.sections['POINTS_start']) // 3 // 4
         for fib in fibers:
             f.write(fib.astype('>f4').tostring())
 
-        self.offset_points = f.tell()
+        self.sections['POINTS_current'] = f.tell()
 
-        f.seek(self.offset_lines, 0)
+        f.seek(self.sections['LINES_current'], os.SEEK_SET)
         for fib in fibers:
             f.write(np.array([len(fib)], dtype='>i4').tostring())
             f.write(np.arange(nb_points, nb_points + len(fib), dtype='>i4').tostring())
             nb_points += len(fib)
 
-        self.offset_lines = f.tell()
+        self.sections['LINES_current'] = f.tell()
 
         f.close()
 
@@ -262,18 +300,27 @@ class VTK:
     def __iter__(self):
         f = open(self.filename, 'rb')
 
+        #Keep important positions in the file.
+        f.seek(self.sections['POINTS'], os.SEEK_SET)
+        f.readline()
+        self.sections['POINTS_current'] = f.tell()
+
+        f.seek(self.sections['LINES'], os.SEEK_SET)
+        f.readline()
+        self.sections['LINES_current'] = f.tell()
+
         for i in range(self.hdr[Header.NB_FIBERS]):
-            f.seek(self.offset_lines, 0)  # Seek from beginning of the file
+            f.seek(self.sections['LINES_current'], os.SEEK_SET)  # Seek from beginning of the file
 
             # Read indices of next streamline
             nbIdx = readBinaryBytes(f, 1, np.dtype('>i4'))[0]
             ptsIdx = readBinaryBytes(f, nbIdx, np.dtype('>i4'))
-            self.offset_lines = f.tell()
+            self.sections['LINES_current'] = f.tell()
 
             # Read points according to indices previously read
             startPos = np.min(ptsIdx) * 3  # Minimum index * 3 (x,y,z)
             endPos = (np.max(ptsIdx) + 1) * 3  # After maximum index * 3 (x,y,z)
-            f.seek(self.offset_points + startPos * 4, 0)  # Seek from beginning of the file
+            f.seek(self.sections['POINTS_current'] + startPos * 4, os.SEEK_SET)  # Seek from beginning of the file
 
             points = readBinaryBytes(f, endPos - startPos, np.dtype('>f4'))
             points = points.reshape([-1, 3])  # Matrix dimension: Nx3
