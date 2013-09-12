@@ -169,7 +169,7 @@ class TCK:
         fibers = np.concatenate(fibers)
         fibers = np.dot(c_[fibers, np.ones([len(fibers), 1], dtype='<f4')], self.M)[:, :-1]
 
-        f = open(self.filename, 'rw+b')
+        f = open(self.filename, 'r+b')
         f.seek(-len(self.EOF_DELIMITER.tostring()), os.SEEK_END)
         f.write(fibers.tostring())
         f.write(self.EOF_DELIMITER.tostring())
