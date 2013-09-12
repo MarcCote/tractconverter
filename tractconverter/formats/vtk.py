@@ -298,6 +298,9 @@ class VTK:
     # TODO: Use a buffer instead of reading one streamline at the time.
     ###
     def __iter__(self):
+        if self.hdr[Header.NB_FIBERS] == 0:
+            return
+
         f = open(self.filename, 'rb')
 
         #Keep important positions in the file.

@@ -8,4 +8,4 @@ python:
 install:
   - "pip install nibabel"
 # command to run tests, e.g. python setup.py test
-script: nosetests
+script: nosetests -v
