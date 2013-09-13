@@ -181,19 +181,21 @@ class TCK:
     # Iterate through fibers
     ###
     def __iter__(self):
+        if self.hdr[Header.NB_FIBERS] == 0:
+            return
+
         buff = ""
         pts = []
 
         f = open(self.filename, 'rb')
         f.seek(self.offset)
         remainingBytes = os.path.getsize(self.filename) - self.offset
-
-        while remainingBytes > 0 or np.all(np.isinf(pts)):
+        while remainingBytes > 0 or not np.all(np.isinf(pts)):
             if remainingBytes > 0:
                 nbBytesToRead = min(remainingBytes, TCK.BUFFER_SIZE * 3 * self.dtype.itemsize)
                 buff += f.read(nbBytesToRead)  # Read BUFFER_SIZE triplets of coordinates (float)
                 remainingBytes -= nbBytesToRead
-
+#
             pts = np.frombuffer(buff, dtype=self.dtype)  # Convert binary to float
 
             if self.dtype != '<f4':

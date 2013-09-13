@@ -176,6 +176,9 @@ class TRK:
     # Iterate through fibers
     ###
     def __iter__(self):
+        if self.hdr[H.NB_FIBERS] == 0:
+            return
+
         f = open(self.filename, 'rb')
         f.seek(self.OFFSET)
 
