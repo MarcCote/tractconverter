@@ -225,7 +225,9 @@ class TCK:
         f.close()
 
     def load_all(self):
-
+        if self.hdr[Header.NB_FIBERS] == 0:
+            return
+        
         with open(self.filename, 'rb') as f:
             f.seek(self.offset)
             buff = f.read()
