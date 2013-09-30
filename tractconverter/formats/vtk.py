@@ -272,6 +272,9 @@ class VTK:
         pass
 
     def __iadd__(self, fibers):
+        if len(p_fibers) == 0:
+            return self
+        
         f = open(self.filename, 'r+b')
         f.seek(self.sections['POINTS_current'], os.SEEK_SET)
 
