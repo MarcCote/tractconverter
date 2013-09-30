@@ -47,7 +47,9 @@ def convert(input, output, verbose=False):
 
         nbFibers += 1
 
-    output += fibers
+    if len(fibers) > 0:
+        output += fibers
+
     output.close()
 
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
