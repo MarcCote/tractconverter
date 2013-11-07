@@ -58,7 +58,7 @@ def walkAndConvert(p_input, p_conversions, p_output=None, p_anatFile=None, p_isR
 ###
 
 #Script description
-DESCRIPTION = 'Convert track files while walking down a path. ({0})'.format(",".join(FORMATS.keys()))
+DESCRIPTION = 'Convert streamlines files while walking down a path. ({0})'.format(",".join(FORMATS.keys()))
 
 
 def buildArgsParser():

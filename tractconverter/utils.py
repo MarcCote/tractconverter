@@ -1,5 +1,6 @@
 import os
 import logging
+from ipdb import set_trace as dbg
 
 from tractconverter.formats.tck import TCK
 from tractconverter.formats.trk import TRK
@@ -54,3 +55,16 @@ def convert(input, output, verbose=False):
 
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
+
+def merge(inputs, output, verbose=False):
+    from tractconverter.formats.header import Header
+
+    streamlines = []
+    for f in inputs:
+        streamlines += [s for s in f]
+
+    output.hdr[Header.NB_FIBERS] = len(streamlines)
+    output.writeHeader() # Update existing header
+    output += streamlines
+
+    logging.info('Done! (' + str(len(streamlines)) + " streamlines merged.)")

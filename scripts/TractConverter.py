@@ -16,7 +16,7 @@ from tractconverter import EXT_ANAT
 # Script description
 DESCRIPTION = """
 TractConverter {0}.
-Convert track files.
+Convert streamlines files.
 Supported formats are {1}
 """.format(info.__version__,
            ",".join(FORMATS.keys()))
