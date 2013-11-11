@@ -29,8 +29,8 @@ You can find our sources and single-click downloads:
 
 .. _main repository: http://github.com/MarcCote/tractconverter
 .. _Documentation: N/A
-.. _current trunk: http://github.com/MarcCote/tractconverter/master
-.. _available releases: N/A
+.. _current trunk: http://github.com/MarcCote/tractconverter/tree/master
+.. _available releases: https://github.com/MarcCote/tractconverter/tree/v0.6.3
 
 License
 =======
