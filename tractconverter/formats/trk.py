@@ -3,6 +3,8 @@
 # Documentation available here:
 # http://www.trackvis.org/docs/?subsect=fileformat
 
+from ipdb import set_trace as dbg
+
 import os
 import logging
 import numpy as np
@@ -192,14 +194,21 @@ class TRK:
                                             nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]),
                                             np.dtype(self.hdr[H.ENDIAN] + "f4"))
 
+            # If there are some properties, ignore them for now.
+            properties = readBinaryBytes(f,
+                                         self.hdr[H.NB_PROPERTIES_BY_TRACT],
+                                         np.dtype(self.hdr[H.ENDIAN] + "f4"))
+
             newShape = [-1, 3 + self.hdr[H.NB_SCALARS_BY_POINT]]
             ptsAndScalars = ptsAndScalars.reshape(newShape)
 
             pointsWithoutScalars = ptsAndScalars[:, 0:3]
             yield pointsWithoutScalars
 
+            
+            remainingBytes -= 4  # Number of points
+            remainingBytes -= nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]) * 4
             # For now, we do not process the tract properties, so just skip over them.
-            remainingBytes -= nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]) * 4 + 4
             remainingBytes -= self.hdr[H.NB_PROPERTIES_BY_TRACT] * 4
             cpt += 1
 
