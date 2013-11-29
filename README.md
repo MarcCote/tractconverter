@@ -14,7 +14,7 @@ N/A
 
 Code
 ====
-"!https://travis-ci.org/[MarcCote]/[tractconverter].png!":https://travis-ci.org/[MarcCote]/[tractconverter]
+[![Build Status](https://travis-ci.org/MarcCote/tractconveter.png)](https://travis-ci.org/MarcCote/tractconveter)
 
 You can find our sources and single-click downloads:
 
