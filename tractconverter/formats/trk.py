@@ -3,8 +3,6 @@
 # Documentation available here:
 # http://www.trackvis.org/docs/?subsect=fileformat
 
-from ipdb import set_trace as dbg
-
 import os
 import logging
 import numpy as np
