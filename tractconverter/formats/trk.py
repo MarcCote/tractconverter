@@ -57,8 +57,8 @@ class TRK:
         self.filename = filename
         self.hdr = {}
         if load:
-            self.hdr = header.get_header_from_anat(anatFile)
             self._load()
+            self.hdr = header.get_header_from_anat(anatFile, self.hdr)
 
     def _load(self):
         f = open(self.filename, 'rb')

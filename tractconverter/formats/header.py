@@ -23,8 +23,7 @@ class Header:
     ENDIAN = 13
 
 
-def get_header_from_anat(anat_file):
-    hdr = {}
+def get_header_from_anat(anat_file, hdr={}):
     if anat_file is None:
         # Defaults
         hdr[Header.VOXEL_SIZES] = (0, 0, 0)
