@@ -9,6 +9,7 @@ import os
 import tempfile
 import numpy as np
 
+from tractconverter.formats import header
 from tractconverter.formats.header import Header
 
 def readBinaryBytes(f, nbBytes, dtype):
@@ -172,6 +173,7 @@ class VTK:
 
         self.hdr = {}
         if load:
+            self.hdr = header.get_header_from_anat(anatFile)
             self._load()
 
     def __del__(self):

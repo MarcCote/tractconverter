@@ -7,6 +7,7 @@ import os
 import logging
 import numpy as np
 
+from tractconverter.formats import header
 from tractconverter.formats.header import Header as H
 
 
@@ -56,6 +57,7 @@ class TRK:
         self.filename = filename
         self.hdr = {}
         if load:
+            self.hdr = header.get_header_from_anat(anatFile)
             self._load()
 
     def _load(self):
