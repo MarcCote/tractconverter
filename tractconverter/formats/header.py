@@ -25,9 +25,10 @@ class Header:
 
 def get_header_from_anat(anat_file, hdr={}):
     if anat_file is None:
-        # Defaults
-        hdr[Header.VOXEL_SIZES] = (0, 0, 0)
-        hdr[Header.DIMENSIONS] = (1, 1, 1)
+        if len(hdr) == 0:
+            # Defaults
+            hdr[Header.VOXEL_SIZES] = (0, 0, 0)
+            hdr[Header.DIMENSIONS] = (1, 1, 1)
 
         return hdr
 
