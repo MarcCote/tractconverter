@@ -36,5 +36,6 @@ def get_header_from_anat(anat_file, hdr={}):
 
     hdr[Header.VOXEL_SIZES] = tuple(anat.get_header().get_zooms())[:3]
     hdr[Header.DIMENSIONS] = tuple(anat.get_header().get_data_shape())
-
+    hdr[Header.VOXEL_TO_WORLD] = anat.get_header().get_best_affine()
+    
     return hdr
