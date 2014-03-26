@@ -135,28 +135,29 @@ class TRK:
         # Get the voxel size and format it as an array.
         voxel_sizes = np.asarray(self.hdr.get(H.VOXEL_SIZES, (1.0, 1.0, 1.0)), dtype='<f4')
         dimensions = np.asarray(self.hdr.get(H.DIMENSIONS, (0, 0, 0)), dtype='<i2')
+        voxel2world = np.asarray(self.hdr.get(H.VOXEL_TO_WORLD, np.eye(4)), dtype='<f4')
 
         f = open(self.filename, 'wb')
-        f.write(self.MAGIC_NUMBER + "\0")  # id_string
-        f.write(dimensions)  # dim
-        f.write(voxel_sizes)  # voxel_size
-        f.write(np.zeros(12, dtype='i1'))  # origin
-        f.write(np.zeros(2, dtype='i1'))  # n_scalars
+        f.write(self.MAGIC_NUMBER + "\0")   # id_string
+        f.write(dimensions)                 # dim
+        f.write(voxel_sizes)                # voxel_size
+        f.write(np.zeros(12, dtype='i1'))   # origin
+        f.write(np.zeros(2, dtype='i1'))    # n_scalars
         f.write(np.zeros(200, dtype='i1'))  # scalar_name
-        f.write(np.zeros(2, dtype='i1'))  # n_properties
+        f.write(np.zeros(2, dtype='i1'))    # n_properties
         f.write(np.zeros(200, dtype='i1'))  # property_name
-        f.write(np.eye(4, dtype='<f4'))  # vos_to_ras
+        f.write(voxel2world)                # vos_to_ras
         f.write(np.zeros(444, dtype='i1'))  # reserved
-        f.write(np.zeros(4, dtype='i1'))  # voxel_order
-        f.write(np.zeros(4, dtype='i1'))  # pad2
-        f.write(np.zeros(24, dtype='i1'))  # image_orientation_patient
-        f.write(np.zeros(2, dtype='i1'))  # pad1
-        f.write(np.zeros(1, dtype='i1'))  # invert_x
-        f.write(np.zeros(1, dtype='i1'))  # invert_y
-        f.write(np.zeros(1, dtype='i1'))  # invert_z
-        f.write(np.zeros(1, dtype='i1'))  # swap_xy
-        f.write(np.zeros(1, dtype='i1'))  # swap_yz
-        f.write(np.zeros(1, dtype='i1'))  # swap_zx
+        f.write(np.zeros(4, dtype='i1'))    # voxel_order
+        f.write(np.zeros(4, dtype='i1'))    # pad2
+        f.write(np.zeros(24, dtype='i1'))   # image_orientation_patient
+        f.write(np.zeros(2, dtype='i1'))    # pad1
+        f.write(np.zeros(1, dtype='i1'))    # invert_x
+        f.write(np.zeros(1, dtype='i1'))    # invert_y
+        f.write(np.zeros(1, dtype='i1'))    # invert_z
+        f.write(np.zeros(1, dtype='i1'))    # swap_xy
+        f.write(np.zeros(1, dtype='i1'))    # swap_yz
+        f.write(np.zeros(1, dtype='i1'))    # swap_zx
         f.write(np.array(self.hdr[H.NB_FIBERS], dtype='<i4'))
         f.write(np.array([2], dtype='<i4'))  # version
         f.write(np.array(self.OFFSET, dtype='<i4'))  # hdr_size, should be 1000
