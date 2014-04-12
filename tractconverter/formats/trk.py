@@ -136,6 +136,7 @@ class TRK:
         voxel_sizes = np.asarray(self.hdr.get(H.VOXEL_SIZES, (1.0, 1.0, 1.0)), dtype='<f4')
         dimensions = np.asarray(self.hdr.get(H.DIMENSIONS, (0, 0, 0)), dtype='<i2')
         voxel2world = np.asarray(self.hdr.get(H.VOXEL_TO_WORLD, np.eye(4)), dtype='<f4')
+        voxel_order = np.asarray(self.hdr.get(H.VOXEL_ORDER, 'LPS'), dtype='S4')  # Trackvis's default is LPS
 
         f = open(self.filename, 'wb')
         f.write(self.MAGIC_NUMBER + "\0")   # id_string
@@ -148,7 +149,7 @@ class TRK:
         f.write(np.zeros(200, dtype='i1'))  # property_name
         f.write(voxel2world)                # vos_to_ras
         f.write(np.zeros(444, dtype='i1'))  # reserved
-        f.write(np.zeros(4, dtype='i1'))    # voxel_order
+        f.write(voxel_order)                # voxel_order
         f.write(np.zeros(4, dtype='i1'))    # pad2
         f.write(np.zeros(24, dtype='i1'))   # image_orientation_patient
         f.write(np.zeros(2, dtype='i1'))    # pad1
