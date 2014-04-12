@@ -6,7 +6,6 @@
 import os
 import logging
 import numpy as np
-import nibabel as nib
 
 from tractconverter.formats import header
 from tractconverter.formats.header import Header as H
@@ -137,13 +136,7 @@ class TRK:
         voxel_sizes = np.asarray(self.hdr.get(H.VOXEL_SIZES, (1.0, 1.0, 1.0)), dtype='<f4')
         dimensions = np.asarray(self.hdr.get(H.DIMENSIONS, (0, 0, 0)), dtype='<i2')
         voxel2world = np.asarray(self.hdr.get(H.VOXEL_TO_WORLD, np.eye(4)), dtype='<f4')
-        voxel_order = np.asarray(self.hdr.get(H.VOXEL_ORDER, 'LPS'), dtype='S4')  # Default is LPS
-        if H.VOXEL_ORDER not in self.hdr:
-            # We can guess the voxel order from the affine if there is no 0 on the diagonal.
-            if not np.any(np.diag(voxel2world) == 0):
-                voxel_order = np.asarray(''.join(nib.aff2axcodes(voxel2world)), dtype='S4')  # Guess from affine
-            else:
-                voxel_order = np.asarray('LPS', dtype='S4')  # Default is LPS
+        voxel_order = np.asarray(self.hdr.get(H.VOXEL_ORDER, 'LPS'), dtype='S4')  # Trackvis's default is LPS
 
         f = open(self.filename, 'wb')
         f.write(self.MAGIC_NUMBER + "\0")   # id_string

@@ -4,6 +4,7 @@ Created on 2012-02-22
 @author: coteharn
 '''
 import nibabel as nib
+import numpy as np
 
 
 class Header:
@@ -37,5 +38,9 @@ def get_header_from_anat(anat_file, hdr={}):
     hdr[Header.VOXEL_SIZES] = tuple(anat.get_header().get_zooms())[:3]
     hdr[Header.DIMENSIONS] = tuple(anat.get_header().get_data_shape())
     hdr[Header.VOXEL_TO_WORLD] = anat.get_header().get_best_affine()
-    
+
+    # We can guess the voxel order from the affine if there is no 0 on the diagonal.
+    if not np.any(np.diag(hdr[Header.VOXEL_TO_WORLD]) == 0):
+        hdr[Header.VOXEL_ORDER] = ''.join(nib.aff2axcodes(hdr[Header.VOXEL_TO_WORLD]))
+
     return hdr
