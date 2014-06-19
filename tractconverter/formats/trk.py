@@ -3,6 +3,7 @@
 # Documentation available here:
 # http://www.trackvis.org/docs/?subsect=fileformat
 
+import io
 import os
 import logging
 import numpy as np
@@ -18,6 +19,7 @@ def readBinaryBytes(f, nbBytes, dtype):
 
 class TRK:
     MAGIC_NUMBER = "TRACK"
+    COUNT_OFFSET = 988
     OFFSET = 1000
     # self.hdr
     # self.filename
@@ -36,10 +38,15 @@ class TRK:
         return magicNumber == TRK.MAGIC_NUMBER
 
     @staticmethod
-    def create(filename, hdr, anatFile=None):
+    def create(filename, hdr=None, anatFile=None):
         f = open(filename, 'wb')
         f.write(TRK.MAGIC_NUMBER + "\n")
         f.close()
+
+        if hdr is None:
+            hdr = TRK.get_empty_header()
+
+        hdr[H.NB_FIBERS] = 0  # NB_FIBERS will be updated when using iadd().
 
         trk = TRK(filename, load=False)
         trk.hdr = hdr
@@ -123,13 +130,29 @@ class TRK:
             nb_fibers += 1
 
         if self.hdr[H.NB_FIBERS] != nb_fibers:
-            logging.warn('The number of streamlines specified in header ({1}) does not match ' +
+            logging.warn('The number of streamlines specified in header ({0}) does not match ' +
                          'the actual number of streamlines contained in this file ({1}). ' +
                          'The latter will be used.'.format(self.hdr[H.NB_FIBERS], nb_fibers))
 
         self.hdr[H.NB_FIBERS] = nb_fibers
 
         f.close()
+
+    @classmethod
+    def get_empty_header(cls):
+        hdr = {}
+
+        #Default values
+        hdr[H.MAGIC_NUMBER] = cls.MAGIC_NUMBER
+        hdr[H.VOXEL_SIZES] = (1, 1, 1)
+        hdr[H.DIMENSIONS] = (1, 1, 1)
+        hdr[H.VOXEL_TO_WORLD] = np.eye(4)
+        hdr[H.VOXEL_ORDER] = 'LPS'  # Trackvis's default is LPS
+        hdr[H.NB_FIBERS] = 0
+        hdr['version'] = 2
+        hdr['hdr_size'] = cls.OFFSET
+
+        return hdr
 
     def writeHeader(self):
         # Get the voxel size and format it as an array.
@@ -169,9 +192,16 @@ class TRK:
 
     def __iadd__(self, fibers):
         f = open(self.filename, 'ab')
+
+        self.hdr[H.NB_FIBERS] += len(fibers)
         for fib in fibers:
             f.write(np.array([len(fib)], '<i4').tostring())
             f.write(fib.astype("<f4").tostring())
+        f.close()
+
+        f = open(self.filename, 'r+b')
+        f.seek(TRK.COUNT_OFFSET, os.SEEK_SET)
+        f.write(np.array(self.hdr[H.NB_FIBERS], dtype='<i4'))
         f.close()
 
         return self
@@ -207,7 +237,6 @@ class TRK:
             pointsWithoutScalars = ptsAndScalars[:, 0:3]
             yield pointsWithoutScalars
 
-            
             remainingBytes -= 4  # Number of points
             remainingBytes -= nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]) * 4
             # For now, we do not process the tract properties, so just skip over them.
@@ -215,6 +244,44 @@ class TRK:
             cpt += 1
 
         f.close()
+
+    def load_all(self):
+        if self.hdr[H.NB_FIBERS] == 0:
+            return []
+
+        with open(self.filename, 'rb') as f:
+            f.seek(self.OFFSET)
+            buff = io.BytesIO(f.read())
+
+        remainingBytes = os.path.getsize(self.filename) - self.OFFSET
+
+        streamlines = []
+        cpt = 0
+        while cpt < self.hdr[H.NB_FIBERS] or remainingBytes > 0:
+            # Read points
+            nbPoints = readBinaryBytes(buff, 1, np.dtype(self.hdr[H.ENDIAN] + "i4"))[0]
+            ptsAndScalars = readBinaryBytes(buff,
+                                            nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]),
+                                            np.dtype(self.hdr[H.ENDIAN] + "f4"))
+
+            # If there are some properties, ignore them for now.
+            properties = readBinaryBytes(buff,
+                                         self.hdr[H.NB_PROPERTIES_BY_TRACT],
+                                         np.dtype(self.hdr[H.ENDIAN] + "f4"))
+
+            newShape = [-1, 3 + self.hdr[H.NB_SCALARS_BY_POINT]]
+            ptsAndScalars = ptsAndScalars.reshape(newShape)
+
+            pointsWithoutScalars = ptsAndScalars[:, 0:3]
+            streamlines.append(pointsWithoutScalars)
+
+            remainingBytes -= 4  # Number of points
+            remainingBytes -= nbPoints * (3 + self.hdr[H.NB_SCALARS_BY_POINT]) * 4
+            # For now, we do not process the tract properties, so just skip over them.
+            remainingBytes -= self.hdr[H.NB_PROPERTIES_BY_TRACT] * 4
+            cpt += 1
+
+        return streamlines
 
     def __str__(self):
         text = ""

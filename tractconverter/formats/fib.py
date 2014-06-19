@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 import numpy as np
-from tractconverter.formats.header import Header
+from tractconverter.formats.header import Header as H
 from vtk import VTK
 
 
@@ -21,10 +21,13 @@ class FIB:
         return filename[-3:].lower() == FIB.MAGIC_NUMBER
 
     @staticmethod
-    def create(filename, hdr, anatFile=None):
+    def create(filename, hdr=None, anatFile=None):
         f = open(filename, 'wb')
         f.write(FIB.MAGIC_NUMBER + "\n")
         f.close()
+
+        if hdr is None:
+            hdr = VTK.get_empty_header()
 
         fib = FIB(filename, load=False)
         fib.hdr = hdr
@@ -61,10 +64,19 @@ class FIB:
         f.readline()  # 4 0 0 0 0
 
         # Read number of fibers
-        self.hdr[Header.NB_FIBERS] = int(f.readline().split()[0])
-        self.hdr[Header.NB_POINTS] = len(f.readlines()) - 2 * self.hdr[Header.NB_FIBERS]
+        self.hdr[H.NB_FIBERS] = int(f.readline().split()[0])
+        self.hdr[H.NB_POINTS] = len(f.readlines()) - 2 * self.hdr[H.NB_FIBERS]
 
         f.close()
+
+    @classmethod
+    def get_empty_header(cls):
+        hdr = {}
+
+        #Default values
+        hdr[H.NB_FIBERS] = 0
+
+        return hdr
 
     def writeHeader(self):
         f = open(self.filename, 'wb')
@@ -75,7 +87,7 @@ class FIB:
         f.write("4 0 0 0 0\n")
         f.write("4 0 0 0 0\n")
         f.write("4 0 0 0 0\n")
-        f.write("{0} 0.5\n".format(self.hdr[Header.NB_FIBERS]))
+        f.write("{0} 0.5\n".format(self.hdr[H.NB_FIBERS]))
 
         f.close()
 
@@ -84,6 +96,7 @@ class FIB:
 
     #####
     # Append fiber to file
+    # TODO: make it really dynamic if possible (like trk and tck).
     ###
     def __iadd__(self, fibers):
         f = open(self.filename, 'ab')
@@ -110,7 +123,7 @@ class FIB:
         for i in range(7):
             f.readline()
 
-        for i in range(self.hdr[Header.NB_FIBERS]):
+        for i in range(self.hdr[H.NB_FIBERS]):
             line = f.readline()
             nbBackward, nbForward = map(int, line.split())
             f.readline()  # Skip (unused)
@@ -132,3 +145,8 @@ class FIB:
             yield pts
 
         f.close()
+
+    def load_all(self):
+        # TODO: make it more efficient, load everything in memory first
+        #       and to processing afterward.
+        return [s for s in self]

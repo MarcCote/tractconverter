@@ -10,11 +10,13 @@ import tempfile
 import numpy as np
 
 from tractconverter.formats import header
-from tractconverter.formats.header import Header
+from tractconverter.formats.header import Header as H
+
 
 def readBinaryBytes(f, nbBytes, dtype):
     buff = f.read(nbBytes * dtype.itemsize)
     return np.frombuffer(buff, dtype=dtype)
+
 
 def readAsciiBytes(f, nbWords, dtype):
     words = []
@@ -30,6 +32,7 @@ def readAsciiBytes(f, nbWords, dtype):
 
     return np.array(' '.join(words).split(), dtype=dtype)
 
+
 # We assume the file cursor points to the beginning of the file.
 def checkIfBinary(f):
     f.readline()  # Skip version
@@ -39,6 +42,7 @@ def checkIfBinary(f):
     f.seek(0, 0)  # Reset cursor to beginning of the file.
 
     return file_type == "BINARY\n"
+
 
 def convertAsciiToBinary(original_filename):
     sections = get_sections(original_filename)
@@ -69,7 +73,7 @@ def convertAsciiToBinary(original_filename):
     line = f.readline()  # POINTS n float
     nb_coordinates = int(line.split()[1]) * 3
     binary_file.write(line)
-    
+
     while nb_coordinates * 3 > 0:
         tokens = f.readline().split()
 
@@ -111,6 +115,7 @@ def convertAsciiToBinary(original_filename):
 
 POLYDATA_SECTIONS = ['POINTS', 'VERTICES', 'LINES', 'POLYGONS', 'TRIANGLE_STRIPS']
 
+
 def get_sections(filename):
     sections_found = {}
     nb_read_bytes = 0
@@ -126,7 +131,6 @@ def get_sections(filename):
             nb_read_bytes += len(line)
 
     return sections_found
-
 
 
 class VTK:
@@ -150,10 +154,13 @@ class VTK:
         return VTK.MAGIC_NUMBER in magicNumber
 
     @staticmethod
-    def create(filename, hdr, anatFile=None):
+    def create(filename, hdr=None, anatFile=None):
         f = open(filename, 'wb')
         f.write(VTK.MAGIC_NUMBER + "\n")
         f.close()
+
+        if hdr is None:
+            hdr = VTK.get_empty_header()
 
         vtk = VTK(filename, load=False)
         vtk.hdr = hdr
@@ -211,18 +218,18 @@ class VTK:
         #self.offset = f.tell()  # Store offset to the beginning of data.
 
         f.seek(self.sections['POINTS'], os.SEEK_SET)
-        self.hdr[Header.NB_POINTS] = int(f.readline().split()[1])  # POINTS n float
+        self.hdr[H.NB_POINTS] = int(f.readline().split()[1])  # POINTS n float
         #self.offset_points = f.tell()
 
-        #f.seek(self.hdr[Header.NB_POINTS] * 3 * 4, 1)  # Skip nb_points * 3 (x,y,z) * 4 bytes
+        #f.seek(self.hdr[H.NB_POINTS] * 3 * 4, 1)  # Skip nb_points * 3 (x,y,z) * 4 bytes
         # Skip newline, to bring to the line containing the LINES marker.
         #f.readline()
 
-        self.hdr[Header.NB_FIBERS] = 0
+        self.hdr[H.NB_FIBERS] = 0
         if 'LINES' in self.sections:
             f.seek(self.sections['LINES'], os.SEEK_SET)
             infos = f.readline().split()  # LINES n size
-            self.hdr[Header.NB_FIBERS] = int(infos[1])
+            self.hdr[H.NB_FIBERS] = int(infos[1])
             #size = int(infos[2])
 
             #self.offset_lines = f.tell()
@@ -231,6 +238,17 @@ class VTK:
         # TODO: Read infos about COLORS, SCALARS, ...
 
         f.close()
+
+    @classmethod
+    def get_empty_header(cls):
+        hdr = {}
+
+        #Default values
+        hdr[H.MAGIC_NUMBER] = cls.MAGIC_NUMBER
+        hdr[H.NB_FIBERS] = 0
+        hdr[H.NB_POINTS] = 0
+
+        return hdr
 
     def writeHeader(self):
         self.sections = {}
@@ -242,19 +260,19 @@ class VTK:
 
         # POINTS
         self.sections['POINTS'] = f.tell()
-        f.write("POINTS {0} float\n".format(self.hdr[Header.NB_POINTS]))
+        f.write("POINTS {0} float\n".format(self.hdr[H.NB_POINTS]))
         self.sections['POINTS_start'] = f.tell()
         self.sections['POINTS_current'] = f.tell()
         #self.offset = f.tell()
-        f.write(np.zeros((self.hdr[Header.NB_POINTS], 3), dtype='>f4'))
+        f.write(np.zeros((self.hdr[H.NB_POINTS], 3), dtype='>f4'))
 
         f.write('\n')
 
         # LINES
-        if self.hdr[Header.NB_FIBERS] > 0:
+        if self.hdr[H.NB_FIBERS] > 0:
             self.sections['LINES'] = f.tell()
-            size = self.hdr[Header.NB_FIBERS] + self.hdr[Header.NB_POINTS]
-            f.write("LINES {0} {1}\n".format(self.hdr[Header.NB_FIBERS], size))
+            size = self.hdr[H.NB_FIBERS] + self.hdr[H.NB_POINTS]
+            f.write("LINES {0} {1}\n".format(self.hdr[H.NB_FIBERS], size))
             self.sections['LINES_current'] = f.tell()
             f.write(np.zeros(size, dtype='>i4'))
 
@@ -273,6 +291,7 @@ class VTK:
         self.cleanTempFile()
         pass
 
+    # TODO: make it really dynamic if possible (like trk and tck).
     def __iadd__(self, fibers):
         if len(fibers) == 0:
             return self
@@ -303,7 +322,7 @@ class VTK:
     # TODO: Use a buffer instead of reading one streamline at the time.
     ###
     def __iter__(self):
-        if self.hdr[Header.NB_FIBERS] == 0:
+        if self.hdr[H.NB_FIBERS] == 0:
             return
 
         f = open(self.filename, 'rb')
@@ -317,7 +336,7 @@ class VTK:
         f.readline()
         self.sections['LINES_current'] = f.tell()
 
-        for i in range(self.hdr[Header.NB_FIBERS]):
+        for i in range(self.hdr[H.NB_FIBERS]):
             f.seek(self.sections['LINES_current'], os.SEEK_SET)  # Seek from beginning of the file
 
             # Read indices of next streamline
@@ -339,3 +358,8 @@ class VTK:
             yield streamline
 
         f.close()
+
+    def load_all(self):
+        # TODO: make it more efficient, load everything in memory first
+        #       and to processing afterward.
+        return [s for s in self]

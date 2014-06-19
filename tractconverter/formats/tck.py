@@ -9,13 +9,15 @@ from pdb import set_trace as dbg
 
 from numpy import linalg
 import nibabel
-from tractconverter.formats.header import Header
+
+from tractconverter.formats.header import Header as H
 from tractconverter.formats import header
 from numpy.lib.index_tricks import c_, r_
 
 
 class TCK:
     MAGIC_NUMBER = "mrtrix tracks"
+    COUNT_OFFSET = len(MAGIC_NUMBER)+1
     BUFFER_SIZE = 1000000
 
     FIBER_DELIMITER = np.array([[np.nan, np.nan, np.nan]], '<f4')
@@ -42,10 +44,15 @@ class TCK:
         return magicNumber.strip() == TCK.MAGIC_NUMBER
 
     @staticmethod
-    def create(filename, hdr, anatFile=None):
+    def create(filename, hdr=None, anatFile=None):
         f = open(filename, 'wb')
         f.write(TCK.MAGIC_NUMBER + "\n")
         f.close()
+
+        if hdr is None:
+            hdr = TCK.get_empty_header()
+
+        hdr[H.NB_FIBERS] = 0  # NB_FIBERS will be updated when using iadd().
 
         tck = TCK(filename, load=False)
         tck.hdr = hdr
@@ -94,8 +101,8 @@ class TCK:
 
         f.seek(self.offset)
         # Count number of NaN (i.e. numbers of fiber).
-        self.hdr[Header.NB_FIBERS] = 0
-        self.hdr[Header.NB_POINTS] = 0
+        self.hdr[H.NB_FIBERS] = 0
+        self.hdr[H.NB_POINTS] = 0
         remainingBytes = os.path.getsize(self.filename) - self.offset
         while remainingBytes > 0:
             nbBytesToRead = min(remainingBytes, TCK.BUFFER_SIZE * 3 * self.dtype.itemsize)
@@ -105,18 +112,28 @@ class TCK:
 
             pts = pts.reshape([-1, 3])
             nbNaNs = np.isnan(pts[:, 0]).sum()
-            self.hdr[Header.NB_FIBERS] += nbNaNs
-            self.hdr[Header.NB_POINTS] += len(pts) - nbNaNs
+            self.hdr[H.NB_FIBERS] += nbNaNs
+            self.hdr[H.NB_POINTS] += len(pts) - nbNaNs
 
-        self.hdr[Header.NB_POINTS] -= 1  # Because the file ends with a serie of 'inf'
+        self.hdr[H.NB_POINTS] -= 1  # Because the file ends with a serie of 'inf'
         f.close()
+
+    @classmethod
+    def get_empty_header(cls):
+        hdr = {}
+
+        #Default values
+        hdr[H.MAGIC_NUMBER] = cls.MAGIC_NUMBER
+        hdr[H.NB_FIBERS] = 0
+
+        return hdr
 
     def writeHeader(self):
         f = open(self.filename, 'wb')
 
         lines = []
         lines.append(TCK.MAGIC_NUMBER)
-        lines.append("count: {0}".format(self.hdr[Header.NB_FIBERS]))
+        lines.append("count: {0:010}".format(self.hdr[H.NB_FIBERS]))
         lines.append("datatype: Float32LE")
         lines.append("file: . ")
         out = "\n".join(lines)
@@ -154,7 +171,7 @@ class TCK:
 
         anat = nibabel.load(anatFile)
         voxelSize = list(anat.get_header().get_zooms())[:3]
-        
+
         scaleMat = np.diag(np.divide(1.0, voxelSize + [1]))
         M = anat.get_header().get_best_affine()
         M = np.dot(scaleMat, M)
@@ -166,11 +183,15 @@ class TCK:
         if len(p_fibers) == 0:
             return self
 
+        self.hdr[H.NB_FIBERS] += len(p_fibers)
         fibers = [r_[f, self.FIBER_DELIMITER] for f in p_fibers]
         fibers = np.concatenate(fibers)
         fibers = np.dot(c_[fibers, np.ones([len(fibers), 1], dtype='<f4')], self.M)[:, :-1]
 
         f = open(self.filename, 'r+b')
+        f.seek(self.COUNT_OFFSET, os.SEEK_SET)
+        f.write("count: {0:010}\n".format(self.hdr[H.NB_FIBERS]))
+
         f.seek(-len(self.EOF_DELIMITER.tostring()), os.SEEK_END)
         f.write(fibers.tostring())
         f.write(self.EOF_DELIMITER.tostring())
@@ -182,7 +203,7 @@ class TCK:
     # Iterate through fibers
     ###
     def __iter__(self):
-        if self.hdr[Header.NB_FIBERS] == 0:
+        if self.hdr[H.NB_FIBERS] == 0:
             return
 
         buff = ""
@@ -226,9 +247,9 @@ class TCK:
         f.close()
 
     def load_all(self):
-        if self.hdr[Header.NB_FIBERS] == 0:
+        if self.hdr[H.NB_FIBERS] == 0:
             return []
-        
+
         with open(self.filename, 'rb') as f:
             f.seek(self.offset)
             buff = f.read()
