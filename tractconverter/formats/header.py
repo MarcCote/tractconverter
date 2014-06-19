@@ -4,6 +4,7 @@ Created on 2012-02-22
 @author: coteharn
 '''
 import nibabel as nib
+import numpy as np
 
 
 class Header:
