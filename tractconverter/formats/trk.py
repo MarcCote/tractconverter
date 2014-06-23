@@ -190,9 +190,6 @@ class TRK:
         f.write(np.array(self.OFFSET, dtype='<i4'))  # hdr_size, should be 1000
         f.close()
 
-        from ipdb import set_trace as dbg
-        dbg()
-
     def close(self):
         pass
 
