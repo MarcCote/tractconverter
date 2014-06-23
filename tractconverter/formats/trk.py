@@ -5,6 +5,7 @@
 
 import io
 import os
+import copy
 import logging
 import numpy as np
 
@@ -45,6 +46,8 @@ class TRK:
 
         if hdr is None:
             hdr = TRK.get_empty_header()
+        else:
+            hdr = copy.deepcopy(hdr)
 
         hdr[H.NB_FIBERS] = 0  # NB_FIBERS will be updated when using iadd().
 
@@ -186,6 +189,9 @@ class TRK:
         f.write(np.array([2], dtype='<i4'))  # version
         f.write(np.array(self.OFFSET, dtype='<i4'))  # hdr_size, should be 1000
         f.close()
+
+        from ipdb import set_trace as dbg
+        dbg()
 
     def close(self):
         pass

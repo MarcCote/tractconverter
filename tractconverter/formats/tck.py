@@ -4,8 +4,8 @@
 # http://www.brain.org.au/software/mrtrix/appendix/mrtrix.html#tracks
 
 import os
+import copy
 import numpy as np
-from pdb import set_trace as dbg
 
 from numpy import linalg
 import nibabel
@@ -51,6 +51,8 @@ class TCK:
 
         if hdr is None:
             hdr = TCK.get_empty_header()
+        else:
+            hdr = copy.deepcopy(hdr)
 
         hdr[H.NB_FIBERS] = 0  # NB_FIBERS will be updated when using iadd().
 

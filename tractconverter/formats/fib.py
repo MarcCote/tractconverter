@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 
+import copy
 import numpy as np
 from tractconverter.formats.header import Header as H
 from vtk import VTK
@@ -28,6 +29,8 @@ class FIB:
 
         if hdr is None:
             hdr = VTK.get_empty_header()
+        else:
+            hdr = copy.deepcopy(hdr)
 
         fib = FIB(filename, load=False)
         fib.hdr = hdr

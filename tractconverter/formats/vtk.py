@@ -3,9 +3,8 @@
 # Documentation available here:
 # http://www.vtk.org/VTK/img/file-formats.pdf
 
-from pdb import set_trace as dbg
-
 import os
+import copy
 import tempfile
 import numpy as np
 
@@ -161,6 +160,8 @@ class VTK:
 
         if hdr is None:
             hdr = VTK.get_empty_header()
+        else:
+            hdr = copy.deepcopy(hdr)
 
         vtk = VTK(filename, load=False)
         vtk.hdr = hdr

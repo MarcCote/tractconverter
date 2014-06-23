@@ -36,7 +36,7 @@ def get_header_from_anat(anat_file, hdr={}):
     anat = nib.load(anat_file)
 
     hdr[Header.VOXEL_SIZES] = tuple(anat.get_header().get_zooms())[:3]
-    hdr[Header.DIMENSIONS] = tuple(anat.get_header().get_data_shape())
+    hdr[Header.DIMENSIONS] = tuple(anat.get_header().get_data_shape())[:3]
     hdr[Header.VOXEL_TO_WORLD] = anat.get_header().get_best_affine()
 
     # We can guess the voxel order from the affine if there is no 0 on the diagonal.
