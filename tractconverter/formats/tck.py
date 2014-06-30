@@ -186,13 +186,16 @@ class TCK:
             return self
 
         self.hdr[H.NB_FIBERS] += len(p_fibers)
-        fibers = [r_[f, self.FIBER_DELIMITER] for f in p_fibers]
+        fibers = [r_[f.astype('<f4'), self.FIBER_DELIMITER] for f in p_fibers]
         fibers = np.concatenate(fibers)
         fibers = np.dot(c_[fibers, np.ones([len(fibers), 1], dtype='<f4')], self.M)[:, :-1]
 
         f = open(self.filename, 'r+b')
         f.seek(self.COUNT_OFFSET, os.SEEK_SET)
         f.write("count: {0:010}\n".format(self.hdr[H.NB_FIBERS]))
+
+        from ipdb import set_trace as dbg
+        dbg()
 
         f.seek(-len(self.EOF_DELIMITER.tostring()), os.SEEK_END)
         f.write(fibers.tostring())
