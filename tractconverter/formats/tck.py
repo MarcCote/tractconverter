@@ -194,9 +194,6 @@ class TCK:
         f.seek(self.COUNT_OFFSET, os.SEEK_SET)
         f.write("count: {0:010}\n".format(self.hdr[H.NB_FIBERS]))
 
-        from ipdb import set_trace as dbg
-        dbg()
-
         f.seek(-len(self.EOF_DELIMITER.tostring()), os.SEEK_END)
         f.write(fibers.tostring())
         f.write(self.EOF_DELIMITER.tostring())
