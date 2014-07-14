@@ -173,10 +173,10 @@ class TCK:
 
         anat = nibabel.load(anatFile)
         voxelSize = list(anat.get_header().get_zooms())[:3]
-
-        scaleMat = np.diag(np.divide(1.0, voxelSize + [1]))
+        
+        scaleMat = np.diag(np.divide(1.0, voxelSize))
         M = anat.get_header().get_best_affine()
-        M = np.dot(scaleMat, M)
+        M[:3, :3] = np.dot(scaleMat, M[:3, :3])
 
         self.M = M.T.astype('<f4')
         self.invM = linalg.inv(self.M)
