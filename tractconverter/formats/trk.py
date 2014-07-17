@@ -133,9 +133,9 @@ class TRK:
             nb_fibers += 1
 
         if self.hdr[H.NB_FIBERS] != nb_fibers:
-            logging.warn('The number of streamlines specified in header ({0}) does not match ' +
-                         'the actual number of streamlines contained in this file ({1}). ' +
-                         'The latter will be used.'.format(self.hdr[H.NB_FIBERS], nb_fibers))
+            logging.warn(('The number of streamlines specified in header ({0}) does not match '
+                         'the actual number of streamlines contained in this file ({1}). '
+                         'The latter will be used.').format(self.hdr[H.NB_FIBERS], nb_fibers))
 
         self.hdr[H.NB_FIBERS] = nb_fibers
 

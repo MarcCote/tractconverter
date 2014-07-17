@@ -10,7 +10,7 @@ docs.  In setup.py in particular, we exec this file, so it cannot import tractco
 # version
 _version_major = 0
 _version_minor = 7
-_version_micro = 2
+_version_micro = 3
 _version_extra = '.dev'
 # _version_extra = ''
 
@@ -77,7 +77,7 @@ tractconverter distribution.
 """
 
 # versions for dependencies
-NUMPY_MIN_VERSION='1.2'
+NUMPY_MIN_VERSION='1.7'
 NIBABEL_MIN_VERSION='1.0.0'
 
 # Main setup parameters
