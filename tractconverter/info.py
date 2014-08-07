@@ -10,7 +10,7 @@ docs.  In setup.py in particular, we exec this file, so it cannot import tractco
 # version
 _version_major = 0
 _version_minor = 7
-_version_micro = 3
+_version_micro = 4
 _version_extra = '.dev'
 # _version_extra = ''
 

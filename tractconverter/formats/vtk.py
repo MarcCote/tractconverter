@@ -193,21 +193,30 @@ class VTK:
         f = open(self.filename, 'rb')
 
         #####
-        # Check if file is in binary format or not.
-        #####
-        is_binary = checkIfBinary(f)
+        # Read header
+        ###
+        info = f.readline().split()
+        self.hdr[H.MAGIC_NUMBER] = info[1]
+        self.hdr["version"] = info[-1]
+        self.hdr["description"] = f.readline()[:-1]
+        self.hdr["file_type"] = f.readline()[:-1]
 
         #####
         # If in ASCII format, create a temporary Binary file. This
         # will avoid lots of problems when reading.
         # We will always read a binary file, converted or not.
         #####
-        if not is_binary:
+        if "BINARY" != self.hdr["file_type"].upper():
             f.close()
             binary_filename = convertAsciiToBinary(self.filename)
             self.filename = binary_filename
 
         self.sections = get_sections(self.filename)
+
+        #TODO: Check number of scalars and properties
+        self.hdr[H.NB_SCALARS_BY_POINT] = "N/A"
+        self.hdr[H.NB_PROPERTIES_BY_TRACT] = "N/A"
+
         f = open(self.filename, 'rb')
 
         #####
@@ -362,7 +371,7 @@ class VTK:
             # TODO: Read COLORS, SCALARS, ...
 
             for pts_id in ptsIdx:
-                yield points[pts_id - pts_id.min()]
+                yield points[pts_id - startPos]
 
         f.close()
 
@@ -371,46 +380,14 @@ class VTK:
         #       and to processing afterward.
         return [s for s in self]
 
-        # if self.hdr[H.NB_FIBERS] == 0:
-        #     return []
+    def __str__(self):
+        text = ""
+        text += "MAGIC NUMBER: {0}".format(self.hdr[H.MAGIC_NUMBER])
+        text += "\nv.{0}".format(self.hdr['version'])
+        text += "\nDescription: '{0}'".format(self.hdr['description'])
+        text += "\nFile type: {0}".format(self.hdr['file_type'])
+        text += "\nnb_scalars: {0}".format(self.hdr[H.NB_SCALARS_BY_POINT])
+        text += "\nnb_properties: {0}".format(self.hdr[H.NB_PROPERTIES_BY_TRACT])
+        text += "\nn_count: {0}".format(self.hdr[H.NB_FIBERS])
 
-        # f = open(self.filename, 'rb')
-
-        # #Keep important positions in the file.
-        # f.seek(self.sections['POINTS'], os.SEEK_SET)
-        # f.readline()
-        # self.sections['POINTS_current'] = f.tell()
-
-        # f.seek(self.sections['LINES'], os.SEEK_SET)
-        # f.readline()
-        # self.sections['LINES_current'] = f.tell()
-
-        # streamlines = []
-        # for i in range(0, self.hdr[H.NB_FIBERS], self.BUFFER):
-        #     f.seek(self.sections['LINES_current'], os.SEEK_SET)  # Seek from beginning of the file
-
-        #     # Read indices of next streamline
-        #     nbIdx = []
-        #     ptsIdx = []
-        #     for k in range(min(self.hdr[H.NB_FIBERS], i+self.BUFFER) - i):
-        #         nbIdx.append(readBinaryBytes(f, 1, np.dtype('>i4'))[0])
-        #         ptsIdx.append(readBinaryBytes(f, nbIdx[-1], np.dtype('>i4')))
-
-        #     self.sections['LINES_current'] = f.tell()
-
-        #     # Read points according to indices previously read
-        #     startPos = np.min(ptsIdx[0]) * 3  # Minimum index * 3 (x,y,z)
-        #     endPos = (np.max(ptsIdx[-1]) + 1) * 3  # After maximum index * 3 (x,y,z)
-        #     f.seek(self.sections['POINTS_current'] + startPos * 4, os.SEEK_SET)  # Seek from beginning of the file
-
-        #     points = readBinaryBytes(f, endPos - startPos, np.dtype('>f4'))
-        #     points = points.reshape([-1, 3])  # Matrix dimension: Nx3
-
-        #     # TODO: Read COLORS, SCALARS, ...
-
-        #     for pts_id in ptsIdx:
-        #         streamlines.append(points[pts_id - pts_id.min()])
-
-        # f.close()
-
-        # return streamlines
+        return text
