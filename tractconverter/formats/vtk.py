@@ -135,6 +135,8 @@ def get_sections(filename):
 class VTK:
     MAGIC_NUMBER = "vtk"
     VERSION = "3.0"
+    BUFFER = 10000
+
     # self.hdr
     # self.filename
     # self.endian
@@ -337,17 +339,21 @@ class VTK:
         f.readline()
         self.sections['LINES_current'] = f.tell()
 
-        for i in range(self.hdr[H.NB_FIBERS]):
+        for i in range(0, self.hdr[H.NB_FIBERS], self.BUFFER):
             f.seek(self.sections['LINES_current'], os.SEEK_SET)  # Seek from beginning of the file
 
             # Read indices of next streamline
-            nbIdx = readBinaryBytes(f, 1, np.dtype('>i4'))[0]
-            ptsIdx = readBinaryBytes(f, nbIdx, np.dtype('>i4'))
+            nbIdx = []
+            ptsIdx = []
+            for k in range(min(self.hdr[H.NB_FIBERS], i+self.BUFFER) - i):
+                nbIdx.append(readBinaryBytes(f, 1, np.dtype('>i4'))[0])
+                ptsIdx.append(readBinaryBytes(f, nbIdx[-1], np.dtype('>i4')))
+
             self.sections['LINES_current'] = f.tell()
 
             # Read points according to indices previously read
-            startPos = np.min(ptsIdx) * 3  # Minimum index * 3 (x,y,z)
-            endPos = (np.max(ptsIdx) + 1) * 3  # After maximum index * 3 (x,y,z)
+            startPos = np.min(ptsIdx[0]) * 3  # Minimum index * 3 (x,y,z)
+            endPos = (np.max(ptsIdx[-1]) + 1) * 3  # After maximum index * 3 (x,y,z)
             f.seek(self.sections['POINTS_current'] + startPos * 4, os.SEEK_SET)  # Seek from beginning of the file
 
             points = readBinaryBytes(f, endPos - startPos, np.dtype('>f4'))
@@ -355,8 +361,8 @@ class VTK:
 
             # TODO: Read COLORS, SCALARS, ...
 
-            streamline = points[ptsIdx - np.min(ptsIdx)]
-            yield streamline
+            for pts_id in ptsIdx:
+                yield points[pts_id - pts_id.min()]
 
         f.close()
 
@@ -364,3 +370,47 @@ class VTK:
         # TODO: make it more efficient, load everything in memory first
         #       and to processing afterward.
         return [s for s in self]
+
+        # if self.hdr[H.NB_FIBERS] == 0:
+        #     return []
+
+        # f = open(self.filename, 'rb')
+
+        # #Keep important positions in the file.
+        # f.seek(self.sections['POINTS'], os.SEEK_SET)
+        # f.readline()
+        # self.sections['POINTS_current'] = f.tell()
+
+        # f.seek(self.sections['LINES'], os.SEEK_SET)
+        # f.readline()
+        # self.sections['LINES_current'] = f.tell()
+
+        # streamlines = []
+        # for i in range(0, self.hdr[H.NB_FIBERS], self.BUFFER):
+        #     f.seek(self.sections['LINES_current'], os.SEEK_SET)  # Seek from beginning of the file
+
+        #     # Read indices of next streamline
+        #     nbIdx = []
+        #     ptsIdx = []
+        #     for k in range(min(self.hdr[H.NB_FIBERS], i+self.BUFFER) - i):
+        #         nbIdx.append(readBinaryBytes(f, 1, np.dtype('>i4'))[0])
+        #         ptsIdx.append(readBinaryBytes(f, nbIdx[-1], np.dtype('>i4')))
+
+        #     self.sections['LINES_current'] = f.tell()
+
+        #     # Read points according to indices previously read
+        #     startPos = np.min(ptsIdx[0]) * 3  # Minimum index * 3 (x,y,z)
+        #     endPos = (np.max(ptsIdx[-1]) + 1) * 3  # After maximum index * 3 (x,y,z)
+        #     f.seek(self.sections['POINTS_current'] + startPos * 4, os.SEEK_SET)  # Seek from beginning of the file
+
+        #     points = readBinaryBytes(f, endPos - startPos, np.dtype('>f4'))
+        #     points = points.reshape([-1, 3])  # Matrix dimension: Nx3
+
+        #     # TODO: Read COLORS, SCALARS, ...
+
+        #     for pts_id in ptsIdx:
+        #         streamlines.append(points[pts_id - pts_id.min()])
+
+        # f.close()
+
+        # return streamlines
