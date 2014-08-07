@@ -37,13 +37,16 @@ def convert(input, output, verbose=False):
 
     nbFibers = 0
     fibers = []
+
+    display_threshold = 10000 if input.hdr[Header.NB_FIBERS] > 100000 else 1000
+
     for i, f in enumerate(input):
         fibers.append(f)
-        if (i + 1) % 100 == 0:
+        if (i + 1) % 1000 == 0:
             output += fibers
             fibers = []
 
-        if i % 1000 == 0:
+        if i % display_threshold == 0:
             logging.info('(' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
 
         nbFibers += 1
