@@ -67,7 +67,10 @@ def main():
 
     if os.path.isfile(out_filename):
         if isForcing:
-            logging.info('Overwriting "{0}".'.format(out_filename))
+            if out_filename == in_filename:
+                parser.error('Cannot use the same name for input and output files. Conversion would fail.')
+            else:
+                logging.info('Overwriting "{0}".'.format(out_filename))
         else:
             parser.error('"{0}" already exist! Use -f to overwrite it.'.format(out_filename))
 

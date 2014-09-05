@@ -66,7 +66,10 @@ def main():
 
     if os.path.isfile(out_filename):
         if isForcing:
-            logging.info('Overwriting "{0}".'.format(out_filename))
+            if any(in_name == out_filename for in_name in in_filenames):
+                parser.error('Cannot output to a file which is also an input file ({0}).'.format(out_filename))
+            else:
+                logging.info('Overwriting "{0}".'.format(out_filename))
         else:
             parser.error('"{0}" already exist! Use -f to overwrite it.'.format(out_filename))
 
