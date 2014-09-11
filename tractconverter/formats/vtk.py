@@ -36,11 +36,11 @@ def readAsciiBytes(f, nbWords, dtype):
 def checkIfBinary(f):
     f.readline()  # Skip version
     f.readline()  # Skip description
-    file_type = f.readline()  # Type of the file BINARY or ASCII.
+    file_type = f.readline().strip()  # Type of the file BINARY or ASCII.
 
     f.seek(0, 0)  # Reset cursor to beginning of the file.
 
-    return file_type == "BINARY\n"
+    return file_type.upper() == "BINARY"
 
 
 def convertAsciiToBinary(original_filename):
@@ -51,10 +51,10 @@ def convertAsciiToBinary(original_filename):
     # Skip the first header lines
     f.readline()  # Version (not used)
     f.readline()  # Description (not used)
-    original_file_type = f.readline()  # Type of the file BINARY or ASCII.
+    original_file_type = f.readline().strip()  # Type of the file BINARY or ASCII.
     f.readline()  # Data type (not used)
 
-    if original_file_type != "ASCII\n":
+    if original_file_type.upper() != "ASCII":
         raise ValueError("BINARY file given to convertAsciiToBinary.")
 
     # Create a temporary file with a name. Delete is set to false to make sure
@@ -150,7 +150,7 @@ class VTK:
     @staticmethod
     def _check(filename):
         f = open(filename, 'rb')
-        magicNumber = f.readline()
+        magicNumber = f.readline().strip()
         f.close()
         return VTK.MAGIC_NUMBER in magicNumber
 
@@ -198,8 +198,8 @@ class VTK:
         info = f.readline().split()
         self.hdr[H.MAGIC_NUMBER] = info[1]
         self.hdr["version"] = info[-1]
-        self.hdr["description"] = f.readline()[:-1]
-        self.hdr["file_type"] = f.readline()[:-1]
+        self.hdr["description"] = f.readline().strip()
+        self.hdr["file_type"] = f.readline().strip()
 
         #####
         # If in ASCII format, create a temporary Binary file. This
@@ -224,7 +224,7 @@ class VTK:
         ###
         f.readline()  # Version (not used)
         f.readline()  # Description (not used)
-        self.fileType = f.readline()  # Type of the file BINARY or ASCII.
+        self.fileType = f.readline().strip()  # Type of the file BINARY or ASCII.
         f.readline()  # Data type (not used)
 
         #self.offset = f.tell()  # Store offset to the beginning of data.
@@ -259,6 +259,8 @@ class VTK:
         hdr[H.MAGIC_NUMBER] = cls.MAGIC_NUMBER
         hdr[H.NB_FIBERS] = 0
         hdr[H.NB_POINTS] = 0
+        hdr[H.NB_SCALARS_BY_POINT] = 0
+        hdr[H.NB_PROPERTIES_BY_TRACT] = 0
 
         return hdr
 
@@ -369,9 +371,8 @@ class VTK:
             points = points.reshape([-1, 3])  # Matrix dimension: Nx3
 
             # TODO: Read COLORS, SCALARS, ...
-
             for pts_id in ptsIdx:
-                yield points[pts_id - startPos]
+                yield points[pts_id - startPos/3]
 
         f.close()
 
