@@ -117,7 +117,8 @@ class TCK:
             self.hdr[H.NB_FIBERS] += nbNaNs
             self.hdr[H.NB_POINTS] += len(pts) - nbNaNs
 
-        self.hdr[H.NB_POINTS] -= 1  # Because the file ends with a serie of 'inf'
+        # Because the file might end with a serie of 'inf'
+        self.hdr[H.NB_POINTS] -= np.isinf(pts[:, 0]).sum()
         f.close()
 
     @classmethod
@@ -173,9 +174,11 @@ class TCK:
 
         anat = nibabel.load(anatFile)
         voxelSize = list(anat.get_header().get_zooms())[:3]
-        
+
         scaleMat = np.diag(np.divide(1.0, voxelSize))
         M = anat.get_header().get_best_affine()
+
+        # Affine matrix without scaling, i.e. diagonal is 1
         M[:3, :3] = np.dot(scaleMat, M[:3, :3])
 
         self.M = M.T.astype('<f4')
