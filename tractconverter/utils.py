@@ -32,7 +32,7 @@ def detect_format(filename):
     return None
 
 
-def convert(input, output, verbose=False):
+def convert(input, output, verbose=False, keep_open=False):
     from tractconverter.formats.header import Header
 
     nbFibers = 0
@@ -54,20 +54,27 @@ def convert(input, output, verbose=False):
     if len(fibers) > 0:
         output += fibers
 
-    output.close()
+    if not keep_open:
+        output.close()
 
     logging.info('Done! (' + str(nbFibers) + "/" + str(input.hdr[Header.NB_FIBERS]) + ' fibers)')
+    return nbFibers
 
 
 def merge(inputs, output, verbose=False):
-    from tractconverter.formats.header import Header
+    #from tractconverter.formats.header import Header
 
-    streamlines = []
-    for f in inputs:
-        streamlines += [s for s in f]
+    #streamlines = []
+    nb_streamlines = 0
+    for input in inputs:
+        nb_streamlines += convert(input, output, verbose=verbose, keep_open=True)
+        #streamlines += [s for s in f]
 
-    output.hdr[Header.NB_FIBERS] = len(streamlines)
-    output.writeHeader() # Update existing header
-    output += streamlines
+    #output.hdr[Header.NB_FIBERS] = len(streamlines)
+    #output.writeHeader() # Update existing header
+    #output += streamlines
 
-    logging.info('Done! (' + str(len(streamlines)) + " streamlines merged.)")
+    # I'm not sure this is doing something anyway.
+    output.close()
+
+    logging.info('Done! (' + str(nb_streamlines) + " streamlines merged.)")
