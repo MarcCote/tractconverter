@@ -3,6 +3,7 @@
 import argparse
 import logging
 import os
+import copy
 import tractconverter.info as info
 
 import tractconverter
@@ -86,12 +87,11 @@ def main():
     #     if not os.path.isfile(anat_filename):
     #         parser.error('"{0}" must be an existing file!'.format(anat_filename))
 
+    #TODO: Consider streamlines files with different anat/space ?
 
-    #TODO: Consider different anat, space.
-    hdr = {}
-    hdr[Header.DIMENSIONS] = (1,1,1)
-    hdr[Header.ORIGIN] = (1,1,1)
-    hdr[Header.NB_FIBERS] = 0  # The actual number of streamlines will be added later.
+    # Use information from the first streamlines file to create the header.
+    hdr = copy.deepcopy(inFormats[0](in_filenames[0]).hdr)
+    hdr[Header.NB_FIBERS] = 0  # The actual number of streamlines will be added later (as we add the streamlines).
 
     #Merge inputs to output
     inputs = (in_format(in_filename) for in_filename, in_format in zip(in_filenames, inFormats))
