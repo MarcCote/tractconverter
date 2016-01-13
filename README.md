@@ -20,8 +20,8 @@ Code
 You can find our sources:
 
 * [Main repository](http://github.com/MarcCote/tractconverter) on Github.
-* Download as a tar/zip file the [current trunk](http://github.com/MarcCote/tractconverter/tree/master).
-* Download [lastest release](https://github.com/MarcCote/tractconverter/tree/v0.6.7).
+* Download as a tar/zip file the [current trunk](https://github.com/MarcCote/tractconverter/tree/master).
+* Download [lastest release](https://github.com/MarcCote/tractconverter/releases/tag/v0.8).
 
 License
 =======
