@@ -21,11 +21,11 @@ You can find our sources:
 
 * [Main repository](http://github.com/MarcCote/tractconverter) on Github.
 * Download as a tar/zip file the [current trunk](http://github.com/MarcCote/tractconverter/tree/master).
-* Download [last release](https://github.com/MarcCote/tractconverter/tree/v0.6.7).
+* Download [lastest release](https://github.com/MarcCote/tractconverter/tree/v0.6.7).
 
 License
 =======
 
-tractconverter is licensed under the terms of the BSD license. Some code included with
-tractconverter is also licensed under the BSD license.  Please see the LICENSE file in the
-tractconverter distribution.
+TractConverter is licensed under the terms of the BSD license. Some code included with
+TractConverter is also licensed under the BSD license.  Please see the LICENSE file in the
+TractConverter distribution.
