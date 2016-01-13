@@ -21,7 +21,7 @@ You can find our sources:
 
 * [Main repository](https://github.com/MarcCote/tractconverter) on Github.
 * Download as a tar/zip file the [current trunk](https://github.com/MarcCote/tractconverter/archive/master.zip).
-* Download [lastest release](https://github.com/MarcCote/tractconverter/releases/tag/v0.8).
+* Download [latest release](https://github.com/MarcCote/tractconverter/releases/tag/v0.8).
 
 License
 =======
