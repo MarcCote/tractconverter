@@ -2,6 +2,8 @@
  TractConverter
 ================
 
+**The TractConverter is now deprecated, please use Nibabel streamlines API instead (e.g. `nibabel.streamlines.load()`).**
+
 TractConverter is a python toolbox to convert tractogram files.
 
 TractConverter is for research only; please do not use results
