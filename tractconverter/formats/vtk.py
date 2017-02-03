@@ -121,7 +121,7 @@ def get_sections(filename):
     with open(filename, 'rb') as f:
         for line in f:
             for section in POLYDATA_SECTIONS:
-                if line.startswith(section):
+                if line.upper().startswith(section):
                     if section in sections_found:
                         print "Warning multiple {0} sections!".format(section)
 
