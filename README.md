@@ -1,6 +1,5 @@
-=============================
- TractConverter (deprecated)
-=============================
+TractConverter (deprecated)
+===========================
 
 **The TractConverter is now deprecated, please use Nibabel streamlines API instead (e.g. `nibabel.streamlines.load()`).**
 
